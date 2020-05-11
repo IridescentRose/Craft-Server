@@ -1,6 +1,7 @@
 #pragma once
 #include "Utils.h"
 #include "Networking/Socket2.h"
+#include "Networking/NetworkManager2.h"
 
 namespace Minecraft::Server {
 	class Server {
@@ -20,5 +21,6 @@ namespace Minecraft::Server {
 	private:
 		ServerSocket* socket;
 		bool m_IsRunning;
+		NetworkManager* netman;
 	};
 }

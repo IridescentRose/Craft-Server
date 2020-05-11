@@ -9,7 +9,7 @@ namespace Minecraft::Server {
 		m_IsRunning = false;
 		socket = nullptr;
 
-
+		netman = nullptr;
 	}
 	Server::~Server()
 	{
@@ -31,16 +31,33 @@ namespace Minecraft::Server {
 		if (socket == nullptr) {
 			throw std::runtime_error("Fatal: ServerSocket is nullptr!");
 		}
+
+		netman = new NetworkManager(socket);
+		if (netman == nullptr) {
+			throw std::runtime_error("Fatal: Network Manager is nullptr!");
+		}
 	}
 	void Server::update()
 	{
 		if (socket->isAlive()) {
+			//Receive a max of 50 packets
+			int packetsRecv = 0;
+			while (netman->ReceivePacket() && packetsRecv < 50) {
+				packetsRecv++;
+			}
+
+			netman->HandlePackets();
+
+
 			//World Updates
+
+
+
+			netman->SendPackets();
 		}
 		else {
 			delete socket;
-			socket = NULL;
-			socket = new ServerSocket(25565);
+			m_IsRunning = false;
 		}
 	}
 }
