@@ -1,10 +1,13 @@
 TARGET = PSP-Craft-Server
-OBJS = src/Main.o 
+OBJS = src/Utils.o \
+src/Server.o \
+src/Networking/Socket2.o \
+src/Main.o 
 
 INCDIR = $(PSPPATH)/include
 INCDIR += ./include
-CFLAGS = -O3 -G0 -g3 -mpreferred-stack-boundary=4 -ffast-math -gdwarf-2
-CXXFLAGS = $(CFLAGS) -std=gnu++17 -fno-rtti -fno-exceptions 
+CFLAGS = -O3 -G0 -g3 -mpreferred-stack-boundary=4 -ffast-math -gdwarf-2 -DCRAFT_SERVER_DEBUG
+CXXFLAGS = $(CFLAGS) -std=gnu++17 -fno-rtti 
 ASFLAGS = $(CFLAGS)
 
 BUILD_PRX = 1
