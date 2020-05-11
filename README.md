@@ -1,3 +1,3 @@
-# {NAME}
+# PSP Craft Server
 
-DESCRIPTION
+A Minecraft Server Running on a Sony PlayStation Portable!
