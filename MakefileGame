@@ -1,0 +1,24 @@
+TARGET = PSP-Craft-Server
+OBJS = src/Main.o 
+
+INCDIR = $(PSPPATH)/include
+INCDIR += ./include
+CFLAGS = -O3 -G0 -g3 -mpreferred-stack-boundary=4 -ffast-math -gdwarf-2
+CXXFLAGS = $(CFLAGS) -std=gnu++17 -fno-rtti -fno-exceptions 
+ASFLAGS = $(CFLAGS)
+
+BUILD_PRX = 1
+PSP_FW_VERSION=500
+PSP_LARGE_MEMORY = 1
+
+LIBDIR += ./lib
+LDFLAGS =
+LIBS= -lstardust -lpng -lpspaudiolib -lpspaudio -lpspaudiocodec -lintraFont -lz -ljson -lpspgum -lpspgu -lstdc++ -lpsprtc -lpspctrl -lm -lpspvfpu -lpspsdk -lpsppower -lpsphttp -lpspmath
+
+EXTRA_TARGETS = EBOOT.PBP
+PSP_EBOOT_TITLE = Craft Server
+PSP_EBOOT_ICON = ICON0.png
+#PSP_EBOOT_PIC1 = PIC1.png
+
+PSPSDK=$(shell psp-config --pspsdk-path)
+include $(PSPSDK)/lib/build.mak
