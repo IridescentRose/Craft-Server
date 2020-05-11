@@ -11,6 +11,8 @@ namespace Minecraft::Server {
 
 		void run();
 
+		void update();
+
 		inline bool isRunning() {
 			return m_IsRunning;
 		}

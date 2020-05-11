@@ -1,5 +1,6 @@
 #include "Socket2.h"
 #include <sys/socket.h>
+#include <fcntl.h>
 
 namespace Minecraft::Server {
 	ServerSocket::ServerSocket(uint16_t port)
@@ -11,6 +12,20 @@ namespace Minecraft::Server {
 		}
 		m_PortNo = port;
 
+
+		int flags = fcntl(m_Socketfd, F_GETFL, 0);
+		if (flags == -1) {
+			throw std::runtime_error("Fatal: Socket Has Invalid Flags! Errno: " + std::to_string(errno));
+		}
+		flags = true ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK);
+		int res = fcntl(m_Socketfd, F_SETFL, flags);
+
+		if (res != 0) {
+			throw std::runtime_error("Fatal: Socket isn't non-blocking! Errno: " + std::to_string(errno));
+		}
+
+		utilityPrint("Socket Created!", LOGGER_LEVEL_DEBUG);
+
 		sockaddr_in sockaddr;
 		sockaddr.sin_family = AF_INET;
 		sockaddr.sin_addr.s_addr = INADDR_ANY;
@@ -20,18 +35,23 @@ namespace Minecraft::Server {
 			throw std::runtime_error("Fatal: Could not bind socket address! Port: " + std::to_string(port) + ". Errno: " + std::to_string(errno));
 		}
 
+		utilityPrint("Socket Bound!", LOGGER_LEVEL_DEBUG);
+
+		utilityPrint("Listening on socket...", LOGGER_LEVEL_DEBUG);
 		if (listen(m_Socketfd, 1) < 0){
 			throw std::runtime_error("Fatal: Could not listen on socket. Errno: " + std::to_string(errno));
 		}
 
 		auto addrlen = sizeof(sockaddr);
 		m_Connection = accept(m_Socketfd, (struct sockaddr*)&sockaddr, (socklen_t*)&addrlen);
+		utilityPrint("Found potential connection...", LOGGER_LEVEL_DEBUG);
 
 		if (m_Connection < 0) {
 			throw std::runtime_error("Fatal: Could not accept connection. Errno: " + std::to_string(errno));
 		}
 
 		utilityPrint("New Connection from " + std::to_string(inet_ntoa(sockaddr.sin_addr)) + " on port " + std::to_string(ntohs(sockaddr.sin_port)), LOGGER_LEVEL_INFO );
+		connected = true;
 	}
 
 	ServerSocket::~ServerSocket()
@@ -55,6 +75,11 @@ namespace Minecraft::Server {
 					len.push_back(newByte);
 					res = recv(m_Connection, &newByte, 1, 0);
 				}
+				else if (res == 0) {
+					utilityPrint("Socket connection closed!", Utilities::LOGGER_LEVEL_WARN);
+					connected = false;
+					return NULL;
+				}
 				else {
 					sceKernelDelayThread(300);
 				}
@@ -77,6 +102,11 @@ namespace Minecraft::Server {
 				int res = recv(m_Connection, b, length, 0);
 				if (res > 0) {
 					totalTaken += res;
+				}
+				else if (res == 0) {
+					utilityPrint("Socket connection closed!", Utilities::LOGGER_LEVEL_WARN);
+					connected = false;
+					return NULL;
 				}
 				else {
 					sceKernelDelayThread(300);
@@ -109,5 +139,17 @@ namespace Minecraft::Server {
 			utilityPrint("Failed to send a packet!", Utilities::LOGGER_LEVEL_WARN);
 			utilityPrint("Packet Size: " + std::to_string(size), Utilities::LOGGER_LEVEL_WARN);
 		}
+	}
+	bool ServerSocket::isAlive()
+	{
+		char buffer[32] = { 0 };
+		int res = recv(m_Connection, buffer, sizeof(buffer), MSG_PEEK | MSG_DONTWAIT);
+
+		if (res == 0) {
+			utilityPrint("Socket connection closed!", Utilities::LOGGER_LEVEL_WARN);
+			connected = false;
+		}
+
+		return connected;
 	}
 }

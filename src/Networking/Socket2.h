@@ -14,9 +14,11 @@ namespace Minecraft::Server {
 		Network::PacketIn* Recv();
 		void Send(size_t size, Network::byte* buffer);
 
+		bool isAlive();
+
 	private:
 		int m_Socketfd, m_Connection, m_PortNo;
-
+		bool connected;
 
 	};
 }

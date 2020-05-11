@@ -37,12 +37,9 @@ int main() {
 	while (server->isRunning()) {
 		Platform::platformUpdate();
 
-		g_RenderCore.BeginCommands();
-		g_RenderCore.Clear();
+		server->update();
 
-
-
-		g_RenderCore.EndCommands();
+		sceDisplayWaitVblankStart();
 	}
 
 	Platform::exitPlatform();
