@@ -22,4 +22,12 @@ namespace Minecraft::Server::Protocol {
 		int requestPacketHandler(PacketIn* p);
 		int pingPacketHandler(PacketIn* p);
 	}
+
+	namespace Login {
+		enum LoginPackets {
+			LOGIN_START = 0x00
+		};
+
+		int loginStartPacketHandler(PacketIn* p);
+	}
 }

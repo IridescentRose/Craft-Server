@@ -207,7 +207,7 @@ namespace Minecraft::Server {
 		}
 
 		case CONNECTION_STATE_LOGIN: {
-
+			g_NetMan->AddPacketHandler(Protocol::Login::LOGIN_START, Protocol::Login::loginStartPacketHandler);
 			break;
 		}
 

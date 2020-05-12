@@ -9,7 +9,6 @@ namespace Minecraft::Server {
 	}
 	void NetworkManager::AddPacket(PacketOut* p)
 	{
-		utilityPrint("Clearing Packet Queue", Utilities::LOGGER_LEVEL_DEBUG);
 		packetQueue.push(p);
 	}
 	void NetworkManager::ClearPacketQueue()
@@ -22,7 +21,6 @@ namespace Minecraft::Server {
 	}
 	void NetworkManager::SendPackets()
 	{
-		utilityPrint("Sending Network Packet Queue", Utilities::LOGGER_LEVEL_DEBUG);
 		std::vector<byte> endByteBuffer;
 		int len = packetQueue.size();
 		for (int i = 0; i < len; i++) {
@@ -57,7 +55,6 @@ namespace Minecraft::Server {
 	}
 	void NetworkManager::HandlePackets()
 	{
-		utilityPrint("Handling Packets...", Utilities::LOGGER_LEVEL_TRACE);
 
 		int len = unhandledPackets.size();
 		for (int i = 0; i < len; i++) {
@@ -72,12 +69,10 @@ namespace Minecraft::Server {
 	}
 	void NetworkManager::AddPacketHandler(int id, PacketHandler h)
 	{
-		utilityPrint("Added Packet Handler for ID: " + std::to_string(id), Utilities::LOGGER_LEVEL_DEBUG);
 		packetHandlers.emplace(id, h);
 	}
 	void NetworkManager::ClearPacketHandlers()
 	{
-		utilityPrint("Clearing Packet Handlers", Utilities::LOGGER_LEVEL_DEBUG);
 		packetHandlers.clear();
 	}
 

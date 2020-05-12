@@ -50,3 +50,23 @@ namespace Minecraft::Server::Protocol {
 		return 0;
 	}
 }
+
+#include <Utilities/UUID.h>
+
+int Minecraft::Server::Protocol::Login::loginStartPacketHandler(PacketIn* p)
+{
+	std::string username;
+
+	username = decodeStringLE(*p);
+
+	utilityPrint(username + " is attempting to join", LOGGER_LEVEL_INFO);
+
+	PacketOut* p2 = new PacketOut();
+	p2->ID = 0x02;
+	encodeStringLE(generateUUID(), *p2);
+	encodeStringLE(username, *p2);
+
+	g_NetMan->AddPacket(p2);
+	g_NetMan->SendPackets();
+	return 0;
+}
