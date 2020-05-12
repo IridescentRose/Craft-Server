@@ -27,8 +27,9 @@ namespace Minecraft::Server {
 		std::queue<PacketIn*> unhandledPackets;
 		std::map<int, PacketHandler> packetHandlers;
 
-	private:
 		ServerSocket* m_Socket;
 
 	};
+
+	extern NetworkManager* g_NetMan;
 }

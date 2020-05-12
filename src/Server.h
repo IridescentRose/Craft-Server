@@ -21,6 +21,5 @@ namespace Minecraft::Server {
 	private:
 		ServerSocket* socket;
 		bool m_IsRunning;
-		NetworkManager* netman;
 	};
 }

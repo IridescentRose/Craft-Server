@@ -2,14 +2,13 @@
 #include "Utils.h"
 #include <Network/NetworkDriver.h>
 #include <stdexcept>
+#include "Protocol/1-12-2.h"
 
 namespace Minecraft::Server {
 	Server::Server()
 	{
 		m_IsRunning = false;
 		socket = nullptr;
-
-		netman = nullptr;
 	}
 	Server::~Server()
 	{
@@ -24,6 +23,8 @@ namespace Minecraft::Server {
 		}
 
 #ifdef CRAFT_SERVER_DEBUG
+		pspDebugScreenInit();
+		pspDebugScreenClear();
 		pspDebugScreenSetXY(0, 0);
 #endif
 
@@ -32,32 +33,31 @@ namespace Minecraft::Server {
 			throw std::runtime_error("Fatal: ServerSocket is nullptr!");
 		}
 
-		netman = new NetworkManager(socket);
-		if (netman == nullptr) {
+		g_NetMan = new NetworkManager(socket);
+		if (g_NetMan == nullptr) {
 			throw std::runtime_error("Fatal: Network Manager is nullptr!");
 		}
+
+		socket->setConnectionStatus(CONNECTION_STATE_HANDSHAKE);
 	}
 	void Server::update()
 	{
 		if (socket->isAlive()) {
 			//Receive a max of 50 packets
-			int packetsRecv = 0;
-			while (netman->ReceivePacket() && packetsRecv < 50) {
-				packetsRecv++;
-			}
-
-			netman->HandlePackets();
+			g_NetMan->ReceivePacket();
+			g_NetMan->HandlePackets();
 
 
 			//World Updates
 
 
 
-			netman->SendPackets();
+			g_NetMan->SendPackets();
 		}
 		else {
-			delete socket;
-			m_IsRunning = false;
+			socket->ListenState();
+			g_NetMan->ClearPacketHandlers();
+			g_NetMan->AddPacketHandler(Protocol::Handshake::HANDSHAKE, Protocol::Handshake::handshakePacketHandler);
 		}
 	}
 }

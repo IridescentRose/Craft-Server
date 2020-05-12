@@ -28,11 +28,11 @@ namespace Minecraft::Server {
 		for (int i = 0; i < len; i++) {
 			endByteBuffer.clear();
 
-			int packetLength = packetQueue.front()->bytes.size() + 2;
+			int packetLength = packetQueue.front()->bytes.size() + 1;
 
 			//Header
-			encodeVarInt(packetLength, endByteBuffer);
-			encodeShort(packetQueue.front()->ID, endByteBuffer);
+			encodeVarIntLE(packetLength, endByteBuffer);
+			encodeByte(packetQueue.front()->ID, endByteBuffer);
 
 			//Add body
 			for (int x = 0; x < packetQueue.front()->bytes.size(); x++) {
@@ -80,4 +80,6 @@ namespace Minecraft::Server {
 		utilityPrint("Clearing Packet Handlers", Utilities::LOGGER_LEVEL_DEBUG);
 		packetHandlers.clear();
 	}
+
+	NetworkManager* g_NetMan = nullptr;
 }

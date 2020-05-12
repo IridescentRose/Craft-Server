@@ -1,7 +1,8 @@
 #include "Socket2.h"
 #include <sys/socket.h>
 #include <fcntl.h>
-
+#include "NetworkManager2.h"
+#include "../Protocol/1-12-2.h"
 namespace Minecraft::Server {
 	ServerSocket::ServerSocket(uint16_t port)
 	{
@@ -52,6 +53,7 @@ namespace Minecraft::Server {
 
 		utilityPrint("New Connection from " + std::to_string(inet_ntoa(sockaddr.sin_addr)) + " on port " + std::to_string(ntohs(sockaddr.sin_port)), LOGGER_LEVEL_INFO );
 		connected = true;
+
 	}
 
 	ServerSocket::~ServerSocket()
@@ -138,6 +140,38 @@ namespace Minecraft::Server {
 			utilityPrint("Packet Size: " + std::to_string(size), Utilities::LOGGER_LEVEL_WARN);
 		}
 	}
+	void ServerSocket::ListenState()
+	{
+		close(m_Connection);
+		setConnectionStatus(CONNECTION_STATE_HANDSHAKE);
+
+		sockaddr_in sockaddr;
+		sockaddr.sin_family = AF_INET;
+		sockaddr.sin_addr.s_addr = INADDR_ANY;
+		sockaddr.sin_port = htons(m_PortNo);
+
+		utilityPrint("Listening on socket...", LOGGER_LEVEL_DEBUG);
+		if (listen(m_Socketfd, 1) < 0) {
+			throw std::runtime_error("Fatal: Could not listen on socket. Errno: " + std::to_string(errno));
+		}
+
+		auto addrlen = sizeof(sockaddr);
+		m_Connection = accept(m_Socketfd, (struct sockaddr*) & sockaddr, (socklen_t*)&addrlen);
+		utilityPrint("Found potential connection...", LOGGER_LEVEL_DEBUG);
+
+		if (m_Connection < 0) {
+			throw std::runtime_error("Fatal: Could not accept connection. Errno: " + std::to_string(errno));
+		}
+
+		utilityPrint("New Connection from " + std::to_string(inet_ntoa(sockaddr.sin_addr)) + " on port " + std::to_string(ntohs(sockaddr.sin_port)), LOGGER_LEVEL_INFO);
+		connected = true;
+
+	}
+	void ServerSocket::Close()
+	{
+		connected = false;
+		close(m_Connection);
+	}
 	bool ServerSocket::isAlive()
 	{
 		char buffer[32] = { 0 };
@@ -149,5 +183,38 @@ namespace Minecraft::Server {
 		}
 
 		return connected;
+	}
+	uint8_t ServerSocket::getConnectionStatus()
+	{
+		return connectionStatus;
+	}
+	void ServerSocket::setConnectionStatus(uint8_t status)
+	{
+		connectionStatus = status;
+
+		g_NetMan->ClearPacketHandlers();
+
+		switch (connectionStatus) {
+		case CONNECTION_STATE_HANDSHAKE: {
+			g_NetMan->AddPacketHandler(Protocol::Handshake::HANDSHAKE, Protocol::Handshake::handshakePacketHandler);
+			break;
+		}
+
+		case CONNECTION_STATE_STATUS: {
+			g_NetMan->AddPacketHandler(Protocol::Status::REQUEST, Protocol::Status::requestPacketHandler);
+			g_NetMan->AddPacketHandler(Protocol::Status::PING, Protocol::Status::pingPacketHandler);
+			break;
+		}
+
+		case CONNECTION_STATE_LOGIN: {
+
+			break;
+		}
+
+		case CONNECTION_STATE_PLAY: {
+
+			break;
+		}
+		}
 	}
 }
