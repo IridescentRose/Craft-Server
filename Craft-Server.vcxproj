@@ -20,6 +20,18 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\Networking\NetworkManager2.cpp" />
+    <ClCompile Include="src\Networking\Socket2.cpp" />
+    <ClCompile Include="src\Protocol\1-12-2.cpp" />
+    <ClCompile Include="src\Server.cpp" />
+    <ClCompile Include="src\Utils.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Networking\NetworkManager2.h" />
+    <ClInclude Include="src\Networking\Socket2.h" />
+    <ClInclude Include="src\Protocol\1-12-2.h" />
+    <ClInclude Include="src\Server.h" />
+    <ClInclude Include="src\Utils.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -69,7 +81,7 @@
     <NMakeBuildCommandLine>build.bat</NMakeBuildCommandLine>
     <NMakeCleanCommandLine>clean.bat</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>rebuild.bat</NMakeReBuildCommandLine>
-    <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>CRAFT_SERVER_DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <IncludePath>C:\Users\Iride\Desktop\PSP-Craft-Server\include;C:\pspsdk\psp\sdk\include;C:\pspsdk\psp\include;$(IncludePath)</IncludePath>
     <AdditionalOptions>/std:c++17</AdditionalOptions>
   </PropertyGroup>
