@@ -1,0 +1,8 @@
+{
+  "server-port": 25565,
+  "gamemode": 0,
+  "motd": "Definitely not a PSP!",
+  "hardcore": false,
+  "difficulty": 2,
+  "max-players": 4
+}

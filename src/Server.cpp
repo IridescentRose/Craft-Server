@@ -2,6 +2,7 @@
 #include "Utils.h"
 #include <Network/NetworkDriver.h>
 #include <stdexcept>
+#include "Config.h"
 #include "Protocol/1-12-2.h"
 
 namespace Minecraft::Server {
@@ -15,6 +16,8 @@ namespace Minecraft::Server {
 	}
 	void Server::run()
 	{
+		parseServerConfig();
+
 		m_IsRunning = true;
 		utilityPrint("Starting Server...", LOGGER_LEVEL_INFO);
 
@@ -28,7 +31,7 @@ namespace Minecraft::Server {
 		pspDebugScreenSetXY(0, 0);
 #endif
 
-		socket = new ServerSocket(25565);
+		socket = new ServerSocket(g_Config.port);
 		if (socket == nullptr) {
 			throw std::runtime_error("Fatal: ServerSocket is nullptr!");
 		}

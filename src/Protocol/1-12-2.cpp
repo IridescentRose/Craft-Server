@@ -2,6 +2,7 @@
 #include "../Networking/NetworkManager2.h"
 #include "../Utils.h"
 #include <Utilities/JSON.h>
+#include "../Config.h"
 
 namespace Minecraft::Server::Protocol {
 
@@ -29,7 +30,7 @@ namespace Minecraft::Server::Protocol {
 		p2->bytes.clear();
 		p2->ID = 0x00;
 
-		std::string st = "{\"description\":{\"text\":\"Definitely not a PSP.\"},\"players\":{\"max\":1,\"online\":0},\"version\":{\"name\":\"1.12.2\",\"protocol\":340}}";
+		std::string st = "{\"description\":{\"text\":\"" + g_Config.motd + "\"},\"players\":{\"max\":" + std::to_string((int)g_Config.max_players) +",\"online\":0},\"version\":{\"name\":\"1.12.2\",\"protocol\":340}}";
 
 		encodeStringLE(st, *p2);
 

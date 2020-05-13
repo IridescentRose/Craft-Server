@@ -4,6 +4,7 @@
 #include "Networking/NetworkManager2.h"
 
 namespace Minecraft::Server {
+
 	class Server {
 	public:
 

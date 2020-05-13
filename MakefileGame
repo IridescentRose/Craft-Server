@@ -3,6 +3,7 @@ OBJS = src/Utils.o \
 src/Server.o \
 src/Networking/Socket2.o \
 src/Networking/NetworkManager2.o \
+src/Config.o \
 src/Protocol/1-12-2.o \
 src/Main.o 
 
