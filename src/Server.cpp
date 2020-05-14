@@ -46,21 +46,17 @@ namespace Minecraft::Server {
 	void Server::update()
 	{
 		if (socket->isAlive()) {
-			//Receive a max of 50 packets
 			g_NetMan->ReceivePacket();
 			g_NetMan->HandlePackets();
 
 
 			//World Updates
 
-
-
 			g_NetMan->SendPackets();
 		}
 		else {
 			socket->ListenState();
-			g_NetMan->ClearPacketHandlers();
-			g_NetMan->AddPacketHandler(Protocol::Handshake::HANDSHAKE, Protocol::Handshake::handshakePacketHandler);
+			socket->setConnectionStatus(CONNECTION_STATE_HANDSHAKE);
 		}
 	}
 }
