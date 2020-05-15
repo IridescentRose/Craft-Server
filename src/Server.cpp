@@ -46,9 +46,15 @@ namespace Minecraft::Server {
 	void Server::update()
 	{
 		if (socket->isAlive()) {
-			g_NetMan->ReceivePacket();
+			int pc = 0;
+			
+			while (g_NetMan->ReceivePacket() && pc < 50) {
+				pc++;
+			}
+
 			g_NetMan->HandlePackets();
 
+			utilityPrint("TICK", LOGGER_LEVEL_TRACE);
 
 			//World Updates
 

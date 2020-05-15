@@ -38,8 +38,6 @@ int main() {
 		Platform::platformUpdate();
 
 		server->update();
-
-		sceDisplayWaitVblankStart();
 	}
 
 	Platform::exitPlatform();

@@ -14,16 +14,6 @@ namespace Minecraft::Server {
 		m_PortNo = port;
 
 
-		int flags = fcntl(m_Socketfd, F_GETFL, 0);
-		if (flags == -1) {
-			throw std::runtime_error("Fatal: Socket Has Invalid Flags! Errno: " + std::to_string(errno));
-		}
-		flags = true ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK);
-		int res = fcntl(m_Socketfd, F_SETFL, flags);
-
-		if (res != 0) {
-			throw std::runtime_error("Fatal: Socket isn't non-blocking! Errno: " + std::to_string(errno));
-		}
 
 		utilityPrint("Socket Created!", LOGGER_LEVEL_DEBUG);
 
@@ -52,6 +42,9 @@ namespace Minecraft::Server {
 		}
 
 		utilityPrint("New Connection from " + std::to_string(inet_ntoa(sockaddr.sin_addr)) + " on port " + std::to_string(ntohs(sockaddr.sin_port)), LOGGER_LEVEL_INFO );
+
+		fcntl(m_Connection, F_SETFL, O_NONBLOCK);
+
 		connected = true;
 
 	}
@@ -164,6 +157,7 @@ namespace Minecraft::Server {
 		}
 
 		utilityPrint("New Connection from " + std::to_string(inet_ntoa(sockaddr.sin_addr)) + " on port " + std::to_string(ntohs(sockaddr.sin_port)), LOGGER_LEVEL_INFO);
+		fcntl(m_Connection, F_SETFL, O_NONBLOCK);
 		connected = true;
 
 	}
