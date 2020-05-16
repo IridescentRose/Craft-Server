@@ -42,27 +42,37 @@ namespace Minecraft::Server {
 		}
 
 		socket->setConnectionStatus(CONNECTION_STATE_HANDSHAKE);
+
+		thr = new Thread(update);
+		thr->Start(0);
 	}
-	void Server::update()
+	int Server::update(unsigned int, void*)
 	{
-		if (socket->isAlive()) {
-			int pc = 0;
-			
-			while (g_NetMan->ReceivePacket() && pc < 50) {
-				pc++;
+		while (true) {
+
+			if (g_Server->socket->isAlive()) {
+				int pc = 0;
+				
+				while (g_NetMan->ReceivePacket() && pc < 50) {
+					pc++;
+				}
+
+				g_NetMan->HandlePackets();
+
+				//World Updates
+
+				g_NetMan->SendPackets();
+			}
+			else {
+				g_Server->socket->ListenState();
+				g_Server->socket->setConnectionStatus(CONNECTION_STATE_HANDSHAKE);
 			}
 
-			g_NetMan->HandlePackets();
-
-			utilityPrint("TICK", LOGGER_LEVEL_TRACE);
-
-			//World Updates
-
-			g_NetMan->SendPackets();
+			sceKernelDelayThread(50 * 1000);
 		}
-		else {
-			socket->ListenState();
-			socket->setConnectionStatus(CONNECTION_STATE_HANDSHAKE);
-		}
+
+		return 0;
 	}
+
+	Server* g_Server = new Server();
 }

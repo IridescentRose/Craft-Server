@@ -23,10 +23,8 @@ int main() {
 	app_Logger->log("Debug Mode Enabled!");
 #endif
 
-
-	Server* server = new Server();
 	try {
-		server->run();
+		g_Server->run();
 	}catch(std::runtime_error e){
 		utilityPrint(e.what(), LOGGER_LEVEL_ERROR);
 
@@ -34,10 +32,12 @@ int main() {
 		Platform::exitPlatform();
 	}
 
-	while (server->isRunning()) {
+	while (g_Server->isRunning()) {
 		Platform::platformUpdate();
 
-		server->update();
+
+		//Note: Should actually count this out - but will do
+		sceKernelDelayThread(50 * 1000);
 	}
 
 	Platform::exitPlatform();

@@ -2,6 +2,7 @@
 #include "Utils.h"
 #include "Networking/Socket2.h"
 #include "Networking/NetworkManager2.h"
+#include <Utilities/Thread.h>
 
 namespace Minecraft::Server {
 
@@ -13,7 +14,7 @@ namespace Minecraft::Server {
 
 		void run();
 
-		void update();
+		static int update(unsigned int, void*);
 
 		inline bool isRunning() {
 			return m_IsRunning;
@@ -22,5 +23,8 @@ namespace Minecraft::Server {
 	private:
 		ServerSocket* socket;
 		bool m_IsRunning;
+		Thread* thr;
 	};
+
+	extern Server* g_Server;
 }
