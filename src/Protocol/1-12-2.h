@@ -1,6 +1,8 @@
 #pragma once
 #include <Network/NetworkDriver.h>
+#include <Events/Events.h>
 
+using namespace Stardust::Events;
 using namespace Stardust::Network;
 
 namespace Minecraft::Server::Protocol {
@@ -152,6 +154,156 @@ namespace Minecraft::Server::Protocol {
 
 		namespace PacketsOut {
 
+		}
+
+		namespace PacketEvents {
+			struct event_teleport_confirm : public Event {
+				int ID;
+			};
+			struct event_tab_complete : public Event {
+				std::wstring text;
+				bool assumeCommand;
+				bool hasPosition;
+				uint64_t position; //Special position format
+			};
+			struct event_chat_message : public Event {
+				std::wstring text;
+			};
+			struct event_client_status : public Event {
+				uint8_t actionID;
+			};
+			struct event_client_settings : public Event {
+				std::wstring locale;
+				uint8_t renderDistance;
+				uint8_t chatMode;
+				bool colors;
+				uint8_t skinParts;
+				uint8_t mainHand;
+			};
+			struct event_confirm_transaction : public Event {
+				uint8_t window;
+				uint16_t action;
+				bool accepted;
+			};
+			struct event_enchant_item : public Event {
+				uint8_t window;
+				uint8_t enchantment;
+			};
+			struct event_click_window : public Event {
+				uint8_t window;
+				int16_t slot;
+				uint8_t button;
+				int16_t action;
+				uint8_t mode;
+				uint8_t bytes[];
+				//TODO: SLOT DATA NBT
+			};
+			struct event_close_window : public Event {
+				uint8_t window;
+			};
+			struct event_plugin_message : public Event {
+				std::wstring channel;
+				std::vector<byte> data;
+			};
+			struct event_use_entity : public Event {
+				int target;
+				uint8_t type;
+				float tX, tY, tZ;
+				uint8_t hand;
+			};
+			struct event_keep_alive : public Event {
+				uint32_t ID; //I must check if this is 32 bit or 64 - assuming 32
+			};
+			struct event_player : public Event {
+				bool onGround;
+			};
+			struct event_player_position : public Event {
+				double x, y, z;
+				bool onGround;
+			};
+			struct event_player_position_and_look : public Event {
+				double x, y, z;
+				float yaw, pitch;
+				bool onGround;
+			};
+			struct event_player_look : public Event {
+				float yaw, pitch;
+				bool onGround;
+			};
+			struct event_vehicle_move : public Event {
+				double x, y, z;
+				float yaw, pitch;
+			};
+			struct event_steer_boat : public Event {
+				bool rightTurn, leftTurn;
+			};
+			struct event_craft_recipe_request : public Event {
+				uint8_t window;
+				int recipe;
+				bool makeAll;
+			};
+			struct event_player_abilities : public Event {
+				uint8_t flags;
+				float flySpeed;
+				float walkSpeed;
+			};
+			struct event_player_digging : public Event {
+				int status;
+				uint64_t position;
+				uint8_t face;
+			};
+			struct event_entity_action : public Event {
+				int id;
+				uint8_t action;
+				uint8_t jumpBoost;
+			};
+			struct event_steer_vehicle : public Event {
+				float sideways;
+				float forward;
+				uint8_t flags;
+			};
+			struct event_crafting_book_data : public Event {
+				int type;
+				int id;
+				bool craftBookOpen;
+				bool craftFilter;
+			};
+			struct event_resource_pack_status : public Event {
+				uint8_t result;
+			};
+			struct event_advancement_tab : public Event {
+				uint8_t action;
+				int tab;
+			};
+			struct event_held_item_change : public Event {
+				uint16_t slot;
+			};
+			struct event_creative_inventory_action : public Event {
+				uint16_t slot;
+				uint8_t data[]; //SLOT:: TODO
+			};
+			struct event_update_sign : public Event {
+				uint64_t position;
+				std::wstring line1;
+				std::wstring line2;
+				std::wstring line3;
+				std::wstring line4;
+			};
+			struct event_animation : public Event {
+				uint8_t hand;
+			};
+			struct event_spectate : public Event {
+				uint64_t uuid;
+			};
+			struct event_player_block_placement : public Event {
+				uint64_t position;
+				uint8_t face;
+				uint8_t hand;
+				float x, y, z;
+			};
+			struct event_use_item : public Event {
+				uint8_t hand;
+			};
 		}
 	}
 }
