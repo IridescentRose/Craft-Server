@@ -5,6 +5,7 @@ src/Networking/Socket2.o \
 src/Networking/NetworkManager2.o \
 src/Config.o \
 src/Protocol/1-12-2.o \
+src/Internal/InternalServer.o \
 src/Main.o 
 
 INCDIR = $(PSPPATH)/include

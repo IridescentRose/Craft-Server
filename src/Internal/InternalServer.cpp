@@ -18,6 +18,7 @@ namespace Minecraft::Server::Internal {
 
 		utilityPrint("Starting Update Thread!", LOGGER_LEVEL_DEBUG);
 		tickUpdate->Start(0);
+		sceKernelDelayThread(50 * 1000);
 	}
 	void InternalServer::stop()
 	{
@@ -25,7 +26,12 @@ namespace Minecraft::Server::Internal {
 	}
 	int InternalServer::tickUpdateThread(unsigned int argc, void* argv)
 	{
-		return 0;
+		while (true) {
+			//Event update first then
+			
+			//TICK UPDATE!
+			sceKernelDelayThread(50 * 1000);
+		}
 	}
 
 	InternalServer* g_InternalServer;

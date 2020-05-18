@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include "Config.h"
 #include "Protocol/1-12-2.h"
+#include "Internal/InternalServer.h"
 
 namespace Minecraft::Server {
 	Server::Server()
@@ -30,6 +31,9 @@ namespace Minecraft::Server {
 		pspDebugScreenClear();
 		pspDebugScreenSetXY(0, 0);
 #endif
+
+		Internal::g_InternalServer = new Internal::InternalServer();
+		Internal::g_InternalServer->start();
 
 		socket = new ServerSocket(g_Config.port);
 		if (socket == nullptr) {
