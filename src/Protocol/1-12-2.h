@@ -161,19 +161,19 @@ namespace Minecraft::Server::Protocol {
 				int ID;
 			};
 			struct event_tab_complete : public Event {
-				std::wstring text;
+				std::string text;
 				bool assumeCommand;
 				bool hasPosition;
 				uint64_t position; //Special position format
 			};
 			struct event_chat_message : public Event {
-				std::wstring text;
+				std::string text;
 			};
 			struct event_client_status : public Event {
 				uint8_t actionID;
 			};
 			struct event_client_settings : public Event {
-				std::wstring locale;
+				std::string locale;
 				uint8_t renderDistance;
 				uint8_t chatMode;
 				bool colors;
@@ -202,7 +202,7 @@ namespace Minecraft::Server::Protocol {
 				uint8_t window;
 			};
 			struct event_plugin_message : public Event {
-				std::wstring channel;
+				std::string channel;
 				std::vector<byte> data;
 			};
 			struct event_use_entity : public Event {
@@ -284,10 +284,10 @@ namespace Minecraft::Server::Protocol {
 			};
 			struct event_update_sign : public Event {
 				uint64_t position;
-				std::wstring line1;
-				std::wstring line2;
-				std::wstring line3;
-				std::wstring line4;
+				std::string line1;
+				std::string line2;
+				std::string line3;
+				std::string line4;
 			};
 			struct event_animation : public Event {
 				uint8_t hand;
