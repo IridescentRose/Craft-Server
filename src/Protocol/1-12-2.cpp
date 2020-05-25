@@ -73,6 +73,13 @@ namespace Minecraft::Server::Protocol {
 
 		utilityPrint(username + " is attempting to join", LOGGER_LEVEL_INFO);
 
+		//BEGIN LOGIN SEQUENCE HERE!
+		PacketsOut::send_login_success(username);
+		g_NetMan->m_Socket->setConnectionStatus(CONNECTION_STATE_PLAY);
+		utilityPrint("Dumping Packet Load!", LOGGER_LEVEL_DEBUG);
+
+
+
 		return 0;
 	}
 

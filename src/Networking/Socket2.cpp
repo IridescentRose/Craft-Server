@@ -184,6 +184,7 @@ namespace Minecraft::Server {
 	}
 	void ServerSocket::setConnectionStatus(uint8_t status)
 	{
+		utilityPrint("Setting Connection Status to: " + std::to_string((int)status), LOGGER_LEVEL_INFO);
 		connectionStatus = status;
 
 		g_NetMan->ClearPacketHandlers();
