@@ -78,7 +78,19 @@ namespace Minecraft::Server::Protocol {
 		g_NetMan->m_Socket->setConnectionStatus(CONNECTION_STATE_PLAY);
 		utilityPrint("Dumping Packet Load!", LOGGER_LEVEL_DEBUG);
 
+		int eid = 1337;
 
+		Play::PacketsOut::send_join_game(eid);
+		Play::PacketsOut::send_plugin_message("MC|Brand");
+		Play::PacketsOut::send_server_difficulty();
+		Play::PacketsOut::send_player_abilities();
+		Play::PacketsOut::send_hotbar_slot(0); //Slot 0
+		Play::PacketsOut::send_entity_status(eid, 24); //Make them op level 0
+		Play::PacketsOut::send_player_list_item();
+		Play::PacketsOut::send_player_position_look();
+		Play::PacketsOut::send_world_border();
+		Play::PacketsOut::send_time_update();
+		Play::PacketsOut::send_spawn_position();
 
 		return 0;
 	}
@@ -127,4 +139,142 @@ namespace Minecraft::Server::Protocol {
 	int Play::spectate_handler(PacketIn* p) { utilityPrint("SPECTATE Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::player_block_placement_handler(PacketIn* p) { utilityPrint("PLAYER_BLOCK_PLACEMENT Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::use_item_handler(PacketIn* p) { utilityPrint("USE_ITEM Triggered!", LOGGER_LEVEL_WARN); return 0; }
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_join_game(int eid)
+{
+	PacketOut* p = new PacketOut();
+
+	p->ID = 0x23;
+	encodeInt(eid, *p);
+	encodeByte(g_Config.gamemode, *p);
+	encodeInt(0, *p); //DIMENSION;
+	encodeByte(g_Config.difficulty, *p);
+	encodeByte(1, *p); //Max players, useless
+	encodeStringLE("default", *p); //Level type
+	encodeBool(false, *p); //Reduce debug info? NONONONONO!
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_plugin_message(std::string type)
+{
+	if (type == "MC|Brand") {
+		PacketOut* p = new PacketOut();
+		p->ID = 0x18;
+		encodeStringLE(type, *p);
+		encodeStringLE("PSP-Craft", *p);
+
+		g_NetMan->AddPacket(p);
+		g_NetMan->SendPackets();
+	}
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_server_difficulty()
+{
+	PacketOut* p = new PacketOut();
+	p->ID = 0x0D;
+	encodeByte(g_Config.difficulty, *p);
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_player_abilities()
+{
+	PacketOut* p = new PacketOut();
+	p->ID = 0x2C;
+	encodeByte(0, *p);
+	encodeFloat(0.5f, *p);
+	encodeFloat(0.1f, *p);
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_hotbar_slot(int slot)
+{
+	PacketOut* p = new PacketOut();
+	p->ID = 0x3A;
+	encodeByte(0, *p);
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_entity_status(int eid, int action)
+{
+	PacketOut* p = new PacketOut();
+	p->ID = 0x1B;
+	encodeInt(eid, *p);
+	encodeByte(action, *p);
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_player_list_item()
+{
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_player_position_look()
+{
+
+	PacketOut* p = new PacketOut();
+	p->ID = 0x2F;
+	encodeDouble(0, *p);
+	encodeDouble(63, *p);
+	encodeDouble(0, *p);
+	encodeFloat(0, *p);
+	encodeFloat(0, *p);
+
+	encodeByte(0, *p);
+	encodeByte(1, *p);//TP ID
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_world_border()
+{
+	PacketOut* p = new PacketOut();
+	p->ID = 0x38;
+	encodeByte(3, *p);
+	//INIT
+	encodeDouble(0, *p);
+	encodeDouble(0, *p);
+
+	encodeDouble(60000000.0, *p);
+	encodeDouble(60000000.0, *p);
+
+	encodeByte(0, *p);
+	encodeVarInt(29999984, p->bytes);
+
+	encodeByte(5, *p);
+	encodeByte(15, *p);
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_time_update()
+{
+	PacketOut* p = new PacketOut();
+	p->ID = 0x47;
+	encodeLong(0, *p);
+	encodeLong(0, *p);
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_spawn_position()
+{
+	PacketOut* p = new PacketOut();
+	p->ID = 0x46;
+	encodeLong((((long long)0 & 0x3FFFFFFLL) << 38) | ((0 & 0x3FFFFFF) << 12) | (63 & 0xFFF), *p);
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
 }

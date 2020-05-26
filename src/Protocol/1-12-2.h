@@ -153,7 +153,17 @@ namespace Minecraft::Server::Protocol {
 		int use_item_handler(PacketIn* p);
 
 		namespace PacketsOut {
-
+			void send_join_game(int eid);
+			void send_plugin_message(std::string type);
+			void send_server_difficulty();
+			void send_player_abilities();
+			void send_hotbar_slot(int slot);
+			void send_entity_status(int eid, int action);
+			void send_player_list_item();
+			void send_player_position_look();
+			void send_world_border();
+			void send_time_update();
+			void send_spawn_position();
 		}
 
 		namespace PacketEvents {
