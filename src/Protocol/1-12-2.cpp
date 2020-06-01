@@ -8,17 +8,14 @@ namespace Minecraft::Server::Protocol {
 
 	int Handshake::handshake_packet_handler(PacketIn* p)
 	{
-		utilityPrint("HANDSHAKE RECEIVED!", LOGGER_LEVEL_TRACE);
 
 		int getVersion = decodeVarInt(*p);
-		utilityPrint("Protocol: " + std::to_string(getVersion), LOGGER_LEVEL_TRACE);
-
+		
 		decodeString(*p);
 		decodeShort(*p);
 
 		int nextStatus = decodeVarInt(*p);
-		utilityPrint("Connection Switch: " + std::to_string(nextStatus), LOGGER_LEVEL_TRACE);
-
+		
 		g_NetMan->m_Socket->setConnectionStatus(nextStatus);
 
 		return 0;
@@ -106,21 +103,86 @@ namespace Minecraft::Server::Protocol {
 		g_NetMan->SendPackets();
 	}
 
-	int Play::teleport_confirm_handler(PacketIn* p) { utilityPrint("TELEPORT_CONFIRM Triggered!", LOGGER_LEVEL_WARN); return 0; }
+	int Play::teleport_confirm_handler(PacketIn* p) { 
+		//This can only be triggered once anyways.
+		utilityPrint("TP Confirmed", LOGGER_LEVEL_DEBUG); 
+		return 0; 
+	}
+
 	int Play::tab_complete_handler(PacketIn* p) { utilityPrint("TAB_COMPLETE Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::chat_message_handler(PacketIn* p) { utilityPrint("CHAT_MESSAGE Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::client_status_handler(PacketIn* p) { utilityPrint("CLIENT_STATUS Triggered!", LOGGER_LEVEL_WARN); return 0; }
-	int Play::client_settings_handler(PacketIn* p) { utilityPrint("CLIENT_SETTINGS Triggered!", LOGGER_LEVEL_WARN); return 0; }
+	
+	int Play::client_settings_handler(PacketIn* p) { 
+		utilityPrint("Client Settings", LOGGER_LEVEL_TRACE);
+
+		std::string locale = decodeStringNonNullLE(*p);
+		uint8_t renderDistance = decodeByte(*p);
+		uint8_t chatMode = decodeByte(*p);
+		bool colors = decodeBool(*p);
+		uint8_t displayed = decodeByte(*p);
+		uint8_t mainhand = decodeByte(*p);
+
+		utilityPrint("Locale: " + locale, LOGGER_LEVEL_TRACE);
+		utilityPrint("Render: " + std::to_string((int)renderDistance), LOGGER_LEVEL_TRACE);
+		utilityPrint("Chat: " + std::to_string((int)chatMode), LOGGER_LEVEL_TRACE);
+		utilityPrint("Colors: " + std::to_string(colors), LOGGER_LEVEL_TRACE);
+		utilityPrint("Main Hand: " + std::to_string((int)mainhand), LOGGER_LEVEL_TRACE);
+
+		return 0; 
+	}
+	
 	int Play::confirm_transaction_handler(PacketIn* p) { utilityPrint("CONFIRM_TRANSACTION Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::enchant_item_handler(PacketIn* p) { utilityPrint("ENCHANT_ITEM Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::click_window_handler(PacketIn* p) { utilityPrint("CLICK_WINDOW Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::close_window_handler(PacketIn* p) { utilityPrint("CLOSE_WINDOW Triggered!", LOGGER_LEVEL_WARN); return 0; }
-	int Play::plugin_message_handler(PacketIn* p) { utilityPrint("PLUGIN_MESSAGE Triggered!", LOGGER_LEVEL_WARN); return 0; }
+	
+	int Play::plugin_message_handler(PacketIn* p) { 
+		utilityPrint("Plugin Message", LOGGER_LEVEL_TRACE); 
+
+		std::string channel = decodeStringNonNullLE(*p);
+		std::string data = decodeStringNonNullLE(*p);
+		utilityPrint("Channel: " + channel, LOGGER_LEVEL_TRACE);
+		utilityPrint("Data: " + data, LOGGER_LEVEL_TRACE);
+
+		return 0; 
+	}
+	
 	int Play::use_entity_handler(PacketIn* p) { utilityPrint("USE_ENTITY Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::keep_alive_handler(PacketIn* p) { utilityPrint("KEEP_ALIVE Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::player_handler(PacketIn* p) { utilityPrint("PLAYER Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::player_position_handler(PacketIn* p) { utilityPrint("PLAYER_POSITION Triggered!", LOGGER_LEVEL_WARN); return 0; }
-	int Play::player_position_and_look_handler(PacketIn* p) { utilityPrint("PLAYER_POSITION_AND_LOOK Triggered!", LOGGER_LEVEL_WARN); return 0; }
+	
+	int Play::player_position_and_look_handler(PacketIn* p) { 
+		utilityPrint("Position & Look", LOGGER_LEVEL_TRACE);
+
+		double x, y, z;
+		float yaw, pitch;
+		bool onGround;
+
+		x = decodeDouble(*p);
+		y = decodeDouble(*p);
+		z = decodeDouble(*p);
+
+		yaw = decodeFloat(*p);
+		pitch = decodeFloat(*p);
+
+		onGround = decodeBool(*p);
+
+		utilityPrint("X: " + std::to_string(x), LOGGER_LEVEL_TRACE);
+		utilityPrint("Y: " + std::to_string(y), LOGGER_LEVEL_TRACE);
+		utilityPrint("Z: " + std::to_string(z), LOGGER_LEVEL_TRACE);
+
+
+		utilityPrint("Yaw: " + std::to_string(yaw), LOGGER_LEVEL_TRACE);
+		utilityPrint("Pitch: " + std::to_string(pitch), LOGGER_LEVEL_TRACE);
+
+		utilityPrint("On Ground: " + std::to_string(onGround), LOGGER_LEVEL_TRACE);
+
+
+		return 0; 
+	}
+	
 	int Play::player_look_handler(PacketIn* p) { utilityPrint("PLAYER_LOOK Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::vehicle_move_handler(PacketIn* p) { utilityPrint("VEHICLE_MOVE Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::steer_boat_handler(PacketIn* p) { utilityPrint("STEER_BOAT Triggered!", LOGGER_LEVEL_WARN); return 0; }
