@@ -1,6 +1,7 @@
 #pragma once
 #include <Network/NetworkDriver.h>
 #include <Events/Events.h>
+#include <Utilities/JSON.h>
 
 using namespace Stardust::Events;
 using namespace Stardust::Network;
@@ -166,6 +167,7 @@ namespace Minecraft::Server::Protocol {
 			void send_spawn_position();
 
 			void send_keepalive(long long int ll);
+			void send_chat(std::string text, std::string color = "default", std::string format = "none");
 		}
 
 		namespace PacketEvents {

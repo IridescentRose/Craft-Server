@@ -62,9 +62,9 @@ namespace Minecraft::Server::Protocol {
 #include <Utilities/UUID.h>
 	using namespace Stardust::Utilities;
 
+	std::string username;
 	int Login::login_start_packet_handler(PacketIn* p)
 	{
-		std::string username;
 
 		username = decodeStringLE(*p);
 
@@ -91,12 +91,13 @@ namespace Minecraft::Server::Protocol {
 
 		return 0;
 	}
-
+	std::string uuid;
 	void Login::PacketsOut::send_login_success(std::string username)
 	{
 		PacketOut* p2 = new PacketOut();
 		p2->ID = 0x02;
-		encodeStringLE(generateUUID(), *p2);
+		uuid = generateUUID();
+		encodeStringLE(uuid, *p2);
 		encodeStringLE(username, *p2);
 
 		g_NetMan->AddPacket(p2);
@@ -110,7 +111,16 @@ namespace Minecraft::Server::Protocol {
 	}
 
 	int Play::tab_complete_handler(PacketIn* p) { utilityPrint("TAB_COMPLETE Triggered!", LOGGER_LEVEL_WARN); return 0; }
-	int Play::chat_message_handler(PacketIn* p) { utilityPrint("CHAT_MESSAGE Triggered!", LOGGER_LEVEL_WARN); return 0; }
+	
+	int Play::chat_message_handler(PacketIn* p) { 
+		std::string text = decodeStringNonNullLE(*p);
+		utilityPrint(username + ": " + text, LOGGER_LEVEL_INFO);
+
+		PacketsOut::send_chat(text);
+
+		return 0; 
+	}
+	
 	int Play::client_status_handler(PacketIn* p) { utilityPrint("CLIENT_STATUS Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	
 	int Play::client_settings_handler(PacketIn* p) { 
@@ -350,6 +360,28 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_keepalive(long long int
 	PacketOut* p = new PacketOut();
 	p->ID = 0x1F;
 	encodeLong(ll, *p);
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_chat(std::string text, std::string color, std::string format)
+{
+	PacketOut* p = new PacketOut();
+	p->ID = 0x0F;
+	std::string build = "{\"translate\":\"chat.type.text\",\"with\":[{\"text\":\"" + username + "\",\"clickEvent\":{\"action\":\"suggest_command\",\"value\":\"/msg " + username + " \"},\"hoverEvent\":{\"action\":\"show_entity\",\"value\":\"{id:" + uuid + ",name:" + username + "}\"},\"insertion\":\"" + username + "\"},{\"text\":\"" + text + "\"";
+
+	if (color != "default") {
+		build += ",\"color\":\"" + color + "\"";
+	}
+
+	if (format != "none") {
+		build += ",\"" + format + "\":\"true\"";
+	}
+
+	build += "}]} ";
+	
+	encodeStringNonNull(build, *p);
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();

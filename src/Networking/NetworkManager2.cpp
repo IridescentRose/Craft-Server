@@ -29,7 +29,7 @@ namespace Minecraft::Server {
 			int packetLength = packetQueue.front()->bytes.size() + 1;
 
 			//Header
-			encodeVarIntLE(packetLength, endByteBuffer);
+			encodeVarInt(packetLength, endByteBuffer);
 			encodeByte(packetQueue.front()->ID, endByteBuffer);
 
 			//Add body
