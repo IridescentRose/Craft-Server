@@ -433,6 +433,12 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 		PacketOut* p2 = new PacketOut();
 		p2->ID = 0x1A;
 
+		build = "{\"text\":\"Server is stopping.\",\"color\":\"dark_red\"} ";
+		encodeStringNonNull(build, *p2);
+		g_NetMan->AddPacket(p2);
+		g_NetMan->SendPackets();
+
+
 		sceKernelDelayThread(5 * 1000 * 1000);
 		sceKernelExitGame();
 	}
