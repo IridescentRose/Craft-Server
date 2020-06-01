@@ -149,7 +149,11 @@ namespace Minecraft::Server::Protocol {
 	}
 	
 	int Play::use_entity_handler(PacketIn* p) { utilityPrint("USE_ENTITY Triggered!", LOGGER_LEVEL_WARN); return 0; }
-	int Play::keep_alive_handler(PacketIn* p) { utilityPrint("KEEP_ALIVE Triggered!", LOGGER_LEVEL_WARN); return 0; }
+	
+	int Play::keep_alive_handler(PacketIn* p) { 
+		return 0; 
+	}
+	
 	int Play::player_handler(PacketIn* p) { utilityPrint("PLAYER Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::player_position_handler(PacketIn* p) { utilityPrint("PLAYER_POSITION Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	
@@ -336,6 +340,16 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_spawn_position()
 	PacketOut* p = new PacketOut();
 	p->ID = 0x46;
 	encodeLong((((long long)0 & 0x3FFFFFFLL) << 38) | ((0 & 0x3FFFFFF) << 12) | (63 & 0xFFF), *p);
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_keepalive(long long int ll)
+{
+	PacketOut* p = new PacketOut();
+	p->ID = 0x1F;
+	encodeLong(ll, *p);
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();

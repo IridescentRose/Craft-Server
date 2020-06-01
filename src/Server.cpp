@@ -52,6 +52,7 @@ namespace Minecraft::Server {
 	}
 	int Server::update(unsigned int, void*)
 	{
+		int count = 0;
 		while (true) {
 
 			if (g_Server->socket->isAlive()) {
@@ -71,6 +72,12 @@ namespace Minecraft::Server {
 				g_Server->socket->ListenState();
 				g_Server->socket->setConnectionStatus(CONNECTION_STATE_HANDSHAKE);
 			}
+
+			count++;
+			if (count % 20 == 0) {
+				Protocol::Play::PacketsOut::send_keepalive(0xCAFEBABECAFEBABE);
+			}
+
 
 			sceKernelDelayThread(50 * 1000);
 		}

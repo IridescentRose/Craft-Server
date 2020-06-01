@@ -115,9 +115,6 @@ namespace Minecraft::Server {
 
 			pIn->ID = Network::decodeByte(*pIn);
 
-			utilityPrint("Received Packet!", Utilities::LOGGER_LEVEL_DEBUG);
-			utilityPrint("Packet ID: " + std::to_string(pIn->ID), Utilities::LOGGER_LEVEL_DEBUG);
-
 			return pIn;
 		}
 		else {

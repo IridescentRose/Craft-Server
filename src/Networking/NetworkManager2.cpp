@@ -37,7 +37,6 @@ namespace Minecraft::Server {
 				endByteBuffer.push_back(packetQueue.front()->bytes[x]);
 			}
 
-			utilityPrint("Sending packet with ID: " + std::to_string(packetQueue.front()->ID), Utilities::LOGGER_LEVEL_DEBUG);
 			//Send over socket
 			m_Socket->Send(endByteBuffer.size(), endByteBuffer.data());
 

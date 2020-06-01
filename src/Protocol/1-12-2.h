@@ -164,6 +164,8 @@ namespace Minecraft::Server::Protocol {
 			void send_world_border();
 			void send_time_update();
 			void send_spawn_position();
+
+			void send_keepalive(long long int ll);
 		}
 
 		namespace PacketEvents {
