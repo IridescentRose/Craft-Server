@@ -168,6 +168,7 @@ namespace Minecraft::Server::Protocol {
 
 			void send_keepalive(long long int ll);
 			void send_chat(std::string text, std::string color = "default", std::string format = "none");
+			void send_chat_command(std::string text);
 		}
 
 		namespace PacketEvents {

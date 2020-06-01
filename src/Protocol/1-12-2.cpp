@@ -114,9 +114,14 @@ namespace Minecraft::Server::Protocol {
 	
 	int Play::chat_message_handler(PacketIn* p) { 
 		std::string text = decodeStringNonNullLE(*p);
-		utilityPrint(username + ": " + text, LOGGER_LEVEL_INFO);
 
-		PacketsOut::send_chat(text);
+		if(text.at(0) != '/'){
+			utilityPrint(username + ": " + text, LOGGER_LEVEL_INFO);
+			PacketsOut::send_chat(text);
+		}
+		else {
+			PacketsOut::send_chat_command(text);
+		}
 
 		return 0; 
 	}
@@ -385,4 +390,50 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat(std::string text, 
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::string text)
+{
+	bool err = true;
+	std::string response;
+	if (text == "/help") {
+		response = "Currently there are no in-game commands. However, you might want to look at console commands.\nConsole:\n/stop - Stops the server.\n/say - Speaks as server.";
+		err = false;
+	}
+	else if (text == "/stop") {
+		response = "Shutting Down Server!";
+	}
+	else if (text.substr(0, 4) == "/say") {
+		response = "[Server]: " + text.substr(4, text.length());
+	}
+	else {
+		response = "Unrecognized Command!";
+	}
+
+	PacketOut* p = new PacketOut();
+	p->ID = 0x0F;
+	std::string build = "{\"text\":\"" + response + "\"";
+	if (!err) {
+		build += ",\"color\":\"green\"";
+	}
+	else {
+		build += ",\"color\":\"dark_red\"";
+	}
+
+
+	build += "} ";
+
+	encodeStringNonNull(build, *p);
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
+
+	if (text == "/stop") {
+		//Send a disconnect
+		PacketOut* p2 = new PacketOut();
+		p2->ID = 0x1A;
+
+		sceKernelDelayThread(5 * 1000 * 1000);
+		sceKernelExitGame();
+	}
 }
