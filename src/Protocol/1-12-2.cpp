@@ -60,9 +60,13 @@ namespace Minecraft::Server::Protocol {
 	}
 
 #include <Utilities/UUID.h>
+#include <dirent.h>
 	using namespace Stardust::Utilities;
 
-	std::string username;
+	std::string username, uuid;
+	char oplevel;
+	Json::Value playerJSON;
+	Json::Value banned;
 	int Login::login_start_packet_handler(PacketIn* p)
 	{
 
@@ -70,7 +74,48 @@ namespace Minecraft::Server::Protocol {
 
 		utilityPrint(username + " is attempting to join", LOGGER_LEVEL_INFO);
 
+
+		banned = Utilities::JSON::openJSON("banned.json");
 		//BEGIN LOGIN SEQUENCE HERE!
+
+		
+
+		//Check if they're new.
+		DIR* dir;
+		struct dirent* ent;
+		bool found = false;
+		if ((dir = opendir("./playerdata")) != NULL) {
+			while ((ent = readdir(dir)) != NULL) {
+				if (username + ".json" == std::string(ent->d_name)) {
+					found = true;
+					break;
+				}
+			}
+			closedir(dir);
+
+
+			if (found) {
+				utilityPrint("Found Player Profile", LOGGER_LEVEL_TRACE);
+				//Load a JSON for their stats.
+				playerJSON = Utilities::JSON::openJSON("./playerdata/" + std::string(ent->d_name));
+				uuid = playerJSON["uuid"].asString();
+				oplevel = playerJSON["oplevel"].asInt();
+			} else {
+				utilityPrint("Player profile not found. Generating new.", LOGGER_LEVEL_TRACE);
+				//Create a default one.
+				uuid = generateUUID();
+				oplevel = 0;
+				playerJSON["uuid"] = uuid;
+				playerJSON["oplevel"] = (int)oplevel;
+
+				std::ofstream fs("./playerdata/" + username + ".json");
+				fs << playerJSON;
+				fs.close();
+			}
+
+		}
+		
+
 		PacketsOut::send_login_success(username);
 		g_NetMan->m_Socket->setConnectionStatus(CONNECTION_STATE_PLAY);
 		utilityPrint("Dumping Packet Load!", LOGGER_LEVEL_DEBUG);
@@ -78,11 +123,28 @@ namespace Minecraft::Server::Protocol {
 		int eid = 1337;
 
 		Play::PacketsOut::send_join_game(eid);
+
+		//Check bans
+		for (int i = 0; i < banned.size(); i++) {
+			if (banned[i].asString() == username) {
+				//They're banned! Don't connect!.
+				PacketOut* p2 = new PacketOut();
+				p2->ID = 0x1A;
+
+				std::string build = "{\"text\":\"You are banned.\",\"color\":\"dark_red\"}";
+				encodeString(build, *p2);
+				g_NetMan->AddPacket(p2);
+				g_NetMan->SendPackets();
+				g_NetMan->m_Socket->Close();
+				return -1;
+			}
+		}
+
 		Play::PacketsOut::send_plugin_message("MC|Brand");
 		Play::PacketsOut::send_server_difficulty();
 		Play::PacketsOut::send_player_abilities();
 		Play::PacketsOut::send_hotbar_slot(0); //Slot 0
-		Play::PacketsOut::send_entity_status(eid, 24); //Make them op level 0
+		Play::PacketsOut::send_entity_status(eid, 24 + oplevel); //Make them op level 0
 		Play::PacketsOut::send_player_list_item();
 		Play::PacketsOut::send_player_position_look();
 		Play::PacketsOut::send_world_border();
@@ -91,12 +153,10 @@ namespace Minecraft::Server::Protocol {
 
 		return 0;
 	}
-	std::string uuid;
 	void Login::PacketsOut::send_login_success(std::string username)
 	{
 		PacketOut* p2 = new PacketOut();
 		p2->ID = 0x02;
-		uuid = generateUUID();
 		encodeStringLE(uuid, *p2);
 		encodeStringLE(username, *p2);
 
@@ -401,10 +461,151 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 		err = false;
 	}
 	else if (text == "/stop") {
-		response = "Shutting Down Server!";
+		if (oplevel != 4) {
+			response = "You do not have adequate permissions.";
+		}
+		else {
+			response = "Shutting Down Server!";
+		}
 	}
+	else if (text.substr(0, 3) == "/op") {
+		if (oplevel < 3) {
+			response = "You do not have adequate permissions.";
+		}
+		else {
+			std::string opUser = text.substr(4, text.length());
+
+			//Check if they're new.
+			DIR* dir;
+			struct dirent* ent;
+			bool found = false;
+			if ((dir = opendir("./playerdata")) != NULL) {
+				while ((ent = readdir(dir)) != NULL) {
+					if (opUser + ".json" == std::string(ent->d_name)) {
+						found = true;
+						break;
+					}
+				}
+				closedir(dir);
+
+				Json::Value pj;
+
+				if (found) {
+					//Load a JSON for their stats.
+					pj = Utilities::JSON::openJSON("./playerdata/" + std::string(ent->d_name));
+					pj["oplevel"] = 3;
+
+					std::ofstream fs("./playerdata/" + opUser + ".json");
+					fs << pj;
+					fs.close();
+				}
+				else {
+					//Create a default one.
+					pj["uuid"] = generateUUID();
+					pj["oplevel"] = 3;
+
+					std::ofstream fs("./playerdata/" + opUser + ".json");
+					fs << pj;
+					fs.close();
+				}
+				response = "Player " + opUser + " has been oped.";
+			}
+
+		}
+	}
+	else if (text.substr(0, 3) == "/deop") {
+		if (oplevel < 3) {
+			response = "You do not have adequate permissions.";
+		}
+		else {
+			std::string opUser = text.substr(4, text.length());
+
+			//Check if they're new.
+			DIR* dir;
+			struct dirent* ent;
+			bool found = false;
+			if ((dir = opendir("./playerdata")) != NULL) {
+				while ((ent = readdir(dir)) != NULL) {
+					if (opUser + ".json" == std::string(ent->d_name)) {
+						found = true;
+						break;
+					}
+				}
+				closedir(dir);
+
+
+				Json::Value pj;
+
+				if (found) {
+					//Load a JSON for their stats.
+					pj = Utilities::JSON::openJSON("./playerdata/" + std::string(ent->d_name));
+					pj["oplevel"] = 0;
+
+					std::ofstream fs("./playerdata/" + opUser + ".json");
+					fs << pj;
+					fs.close();
+				}
+				else {
+					//Create a default one.
+					pj["uuid"] = generateUUID();
+					pj["oplevel"] = 0;
+
+					std::ofstream fs("./playerdata/" + opUser + ".json");
+					fs << pj;
+					fs.close();
+				}
+				response = "Player " + opUser + " has been deoped.";
+			}
+
+		}
+	}
+	else if (text.substr(0, 4) == "/ban") {
+		if (oplevel < 3) {
+			response = "You do not have adequate permissions.";
+		}
+		else {
+			banned.append(text.substr(5, text.length()));
+			std::ofstream fs("./banned.json");
+			fs << banned;
+			fs.close();
+			response = "Banned " + text.substr(5, text.length());
+		}
+	}
+	else if (text.substr(0, 6) == "/unban") {
+		if (oplevel < 3) {
+			response = "You do not have adequate permissions.";
+		}
+		else {
+			int idx = -1;
+			for (int i = 0; i < banned.size(); i++) {
+				if (banned[i].asString() == text.substr(7, text.length())) {
+					idx = i;
+				}
+			}
+
+			if (idx != -1) {
+				Json::Value r;
+				banned.removeIndex(idx, &r);
+
+				std::ofstream fs("./banned.json");
+				fs << banned;
+				fs.close();
+
+				response = "Unbanned " + text.substr(7, text.length());
+			}
+			else {
+				response = "Could not find player " + text.substr(7, text.length());
+			}
+		}
+	}
+
 	else if (text.substr(0, 4) == "/say") {
-		response = "[Server]: " + text.substr(4, text.length());
+		if (oplevel < 1) {
+			response = "You do not have adequate permissions.";
+		}
+		else {
+			response = "[Server]: " + text.substr(4, text.length());
+		}
 	}
 	else {
 		response = "Unrecognized Command!";
@@ -428,13 +629,13 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
 
-	if (text == "/stop") {
+	if (text == "/stop" && oplevel == 4) {
 		//Send a disconnect
 		PacketOut* p2 = new PacketOut();
 		p2->ID = 0x1A;
 
-		build = "{\"text\":\"Server is stopping.\",\"color\":\"dark_red\"} ";
-		encodeStringNonNull(build, *p2);
+		build = "{\"text\":\"Server is stopping.\",\"color\":\"gold\"}";
+		encodeString(build, *p2);
 		g_NetMan->AddPacket(p2);
 		g_NetMan->SendPackets();
 
