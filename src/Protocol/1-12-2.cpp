@@ -513,12 +513,12 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 
 		}
 	}
-	else if (text.substr(0, 3) == "/deop") {
+	else if (text.substr(0, 5) == "/deop") {
 		if (oplevel < 3) {
 			response = "You do not have adequate permissions.";
 		}
 		else {
-			std::string opUser = text.substr(4, text.length());
+			std::string opUser = text.substr(6, text.length());
 
 			//Check if they're new.
 			DIR* dir;
