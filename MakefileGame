@@ -6,6 +6,7 @@ src/Networking/NetworkManager2.o \
 src/Config.o \
 src/Protocol/1-12-2.o \
 src/Internal/InternalServer.o \
+src/Internal/Player/Player.o \
 src/Main.o 
 
 INCDIR = $(PSPPATH)/include

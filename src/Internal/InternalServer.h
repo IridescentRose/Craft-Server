@@ -1,5 +1,6 @@
 #pragma once
 #include <Utilities/Thread.h>
+#include "Player/Player.h"
 
 using namespace Stardust::Utilities;
 

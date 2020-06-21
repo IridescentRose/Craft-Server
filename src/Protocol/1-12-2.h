@@ -176,17 +176,11 @@ namespace Minecraft::Server::Protocol {
 		}
 
 		namespace PacketEvents {
-			struct event_teleport_confirm : public Event {
-				int ID;
-			};
 			struct event_tab_complete : public Event {
 				std::string text;
 				bool assumeCommand;
 				bool hasPosition;
 				uint64_t position; //Special position format
-			};
-			struct event_chat_message : public Event {
-				std::string text;
 			};
 			struct event_client_status : public Event {
 				uint8_t actionID;

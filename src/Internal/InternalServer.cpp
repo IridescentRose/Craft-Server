@@ -23,6 +23,7 @@ namespace Minecraft::Server::Internal {
 	void InternalServer::stop()
 	{
 		tickUpdate->Kill();
+		utilityPrint("Stopping Internal Server!", LOGGER_LEVEL_INFO);
 	}
 	int InternalServer::tickUpdateThread(unsigned int argc, void* argv)
 	{

@@ -4,6 +4,10 @@
 #include <Utilities/JSON.h>
 #include "../Config.h"
 
+#include <Utilities/UUID.h>
+#include "../Internal/InternalServer.h"
+#include <dirent.h>
+
 namespace Minecraft::Server::Protocol {
 
 	int Handshake::handshake_packet_handler(PacketIn* p)
@@ -59,12 +63,8 @@ namespace Minecraft::Server::Protocol {
 		g_NetMan->m_Socket->Close();
 	}
 
-#include <Utilities/UUID.h>
-#include <dirent.h>
 	using namespace Stardust::Utilities;
 
-	std::string username, uuid;
-	char oplevel;
 	Json::Value playerJSON;
 	Json::Value banned;
 	bool downfall;
@@ -73,9 +73,9 @@ namespace Minecraft::Server::Protocol {
 	{
 		downfall = false;
 
-		username = decodeStringLE(*p);
+		Internal::Player::g_Player.username = decodeStringLE(*p);
 
-		utilityPrint(username + " is attempting to join", LOGGER_LEVEL_INFO);
+		utilityPrint(Internal::Player::g_Player.username + " is attempting to join", LOGGER_LEVEL_INFO);
 
 
 		banned = Utilities::JSON::openJSON("banned.json");
@@ -89,7 +89,7 @@ namespace Minecraft::Server::Protocol {
 		bool found = false;
 		if ((dir = opendir("./playerdata")) != NULL) {
 			while ((ent = readdir(dir)) != NULL) {
-				if (username + ".json" == std::string(ent->d_name)) {
+				if (Internal::Player::g_Player.username + ".json" == std::string(ent->d_name)) {
 					found = true;
 					break;
 				}
@@ -101,17 +101,17 @@ namespace Minecraft::Server::Protocol {
 				utilityPrint("Found Player Profile", LOGGER_LEVEL_TRACE);
 				//Load a JSON for their stats.
 				playerJSON = Utilities::JSON::openJSON("./playerdata/" + std::string(ent->d_name));
-				uuid = playerJSON["uuid"].asString();
-				oplevel = playerJSON["oplevel"].asInt();
+				Internal::Player::g_Player.uuid = playerJSON["uuid"].asString();
+				Internal::Player::g_Player.operatorLevel = playerJSON["oplevel"].asInt();
 			} else {
 				utilityPrint("Player profile not found. Generating new.", LOGGER_LEVEL_TRACE);
 				//Create a default one.
-				uuid = generateUUID();
-				oplevel = 0;
-				playerJSON["uuid"] = uuid;
-				playerJSON["oplevel"] = (int)oplevel;
+				Internal::Player::g_Player.uuid = generateUUID();
+				Internal::Player::g_Player.operatorLevel = 0;
+				playerJSON["uuid"] = Internal::Player::g_Player.uuid;
+				playerJSON["oplevel"] = (int)Internal::Player::g_Player.operatorLevel;
 
-				std::ofstream fs("./playerdata/" + username + ".json");
+				std::ofstream fs("./playerdata/" + Internal::Player::g_Player.username + ".json");
 				fs << playerJSON;
 				fs.close();
 			}
@@ -119,7 +119,7 @@ namespace Minecraft::Server::Protocol {
 		}
 		
 
-		PacketsOut::send_login_success(username);
+		PacketsOut::send_login_success(Internal::Player::g_Player.username);
 		g_NetMan->m_Socket->setConnectionStatus(CONNECTION_STATE_PLAY);
 		utilityPrint("Dumping Packet Load!", LOGGER_LEVEL_DEBUG);
 
@@ -129,7 +129,7 @@ namespace Minecraft::Server::Protocol {
 
 		//Check bans
 		for (int i = 0; i < banned.size(); i++) {
-			if (banned[i].asString() == username) {
+			if (banned[i].asString() == Internal::Player::g_Player.username) {
 				//They're banned! Don't connect!.
 				Play::PacketsOut::send_disconnect("You are banned!", "dark_red");
 				return -1;
@@ -140,7 +140,7 @@ namespace Minecraft::Server::Protocol {
 		Play::PacketsOut::send_server_difficulty();
 		Play::PacketsOut::send_player_abilities();
 		Play::PacketsOut::send_hotbar_slot(0); //Slot 0
-		Play::PacketsOut::send_entity_status(eid, 24 + oplevel); //Make them op level 0
+		Play::PacketsOut::send_entity_status(eid, 24 + Internal::Player::g_Player.operatorLevel); //Make them op level 0
 		Play::PacketsOut::send_player_list_item();
 		Play::PacketsOut::send_player_position_look();
 		Play::PacketsOut::send_world_border();
@@ -157,7 +157,7 @@ namespace Minecraft::Server::Protocol {
 	{
 		PacketOut* p2 = new PacketOut();
 		p2->ID = 0x02;
-		encodeStringLE(uuid, *p2);
+		encodeStringLE(Internal::Player::g_Player.uuid, *p2);
 		encodeStringLE(username, *p2);
 
 		g_NetMan->AddPacket(p2);
@@ -176,7 +176,7 @@ namespace Minecraft::Server::Protocol {
 		std::string text = decodeStringNonNullLE(*p);
 
 		if(text.at(0) != '/'){
-			utilityPrint(username + ": " + text, LOGGER_LEVEL_INFO);
+			utilityPrint(Internal::Player::g_Player.username + ": " + text, LOGGER_LEVEL_INFO);
 			PacketsOut::send_chat(text);
 		}
 		else {
@@ -446,7 +446,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat(std::string text, 
 		build = "{\"text\":\"" + text + "\"";
 	}
 	else {
-		build = "{\"translate\":\"chat.type.text\",\"with\":[{\"text\":\"" + username + "\",\"clickEvent\":{\"action\":\"suggest_command\",\"value\":\"/msg " + username + " \"},\"hoverEvent\":{\"action\":\"show_entity\",\"value\":\"{id:" + uuid + ",name:" + username + "}\"},\"insertion\":\"" + username + "\"},{\"text\":\"" + text + "\"";
+		build = "{\"translate\":\"chat.type.text\",\"with\":[{\"text\":\"" + Internal::Player::g_Player.username + "\",\"clickEvent\":{\"action\":\"suggest_command\",\"value\":\"/msg " + Internal::Player::g_Player.username + " \"},\"hoverEvent\":{\"action\":\"show_entity\",\"value\":\"{id:" + Internal::Player::g_Player.uuid + ",name:" + Internal::Player::g_Player.username + "}\"},\"insertion\":\"" + Internal::Player::g_Player.username + "\"},{\"text\":\"" + text + "\"";
 	}
 
 	if (color != "default") {
@@ -474,7 +474,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 		err = false;
 	}
 	else if (text == "/stop") {
-		if (oplevel != 4) {
+		if (Internal::Player::g_Player.operatorLevel != 4) {
 			response = "You do not have adequate permissions.";
 		}
 		else {
@@ -482,7 +482,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 		}
 	}
 	else if (text.substr(0, 3) == "/op") {
-		if (oplevel < 3) {
+		if (Internal::Player::g_Player.operatorLevel < 3) {
 			response = "You do not have adequate permissions.";
 		}
 		else {
@@ -527,7 +527,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 		}
 	}
 	else if (text.substr(0, 5) == "/deop") {
-		if (oplevel < 3) {
+		if (Internal::Player::g_Player.operatorLevel < 3) {
 			response = "You do not have adequate permissions.";
 		}
 		else {
@@ -573,7 +573,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 		}
 	}
 	else if (text.substr(0, 4) == "/ban") {
-		if (oplevel < 3) {
+		if (Internal::Player::g_Player.operatorLevel < 3) {
 			response = "You do not have adequate permissions.";
 		}
 		else {
@@ -583,13 +583,13 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 			fs.close();
 			response = "Banned " + text.substr(5, text.length());
 
-			if (username == text.substr(5, text.length())) {
+			if (Internal::Player::g_Player.username == text.substr(5, text.length())) {
 				PacketsOut::send_disconnect("You were banned!", "dark_red");
 			}
 		}
 	}
 	else if (text.substr(0, 6) == "/unban") {
-		if (oplevel < 3) {
+		if (Internal::Player::g_Player.operatorLevel < 3) {
 			response = "You do not have adequate permissions.";
 		}
 		else {
@@ -616,10 +616,10 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 		}
 	}
 	else if (text.substr(0, 5) == "/kick") {
-		if (oplevel < 1) {
+		if (Internal::Player::g_Player.operatorLevel < 1) {
 			response = "You do not have adequate permissions.";
 		}else{
-			if (username == text.substr(6, text.length())) {
+			if (Internal::Player::g_Player.username == text.substr(6, text.length())) {
 				PacketsOut::send_disconnect("You were kicked!", "green");
 			}
 			response = "Kicked player.";
@@ -627,7 +627,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 	}
 
 	else if (text.substr(0, 4) == "/say") {
-		if (oplevel < 1) {
+		if (Internal::Player::g_Player.operatorLevel < 1) {
 			response = "You do not have adequate permissions.";
 		}
 		else {
@@ -635,7 +635,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 		}
 	}
 	else if (text == "/toggledownfall") {
-		if (oplevel < 1) {
+		if (Internal::Player::g_Player.operatorLevel < 1) {
 			response = "You do not have adequate permissions.";
 		}
 		else {
@@ -651,7 +651,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 		}
 	}
 	else if (text.substr(0, 9) == "/gamemode") {
-		if (oplevel < 1) {
+		if (Internal::Player::g_Player.operatorLevel < 1) {
 			response = "You do not have adequate permissions.";
 		}
 		else {
@@ -699,9 +699,9 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
 
-	if (text == "/stop" && oplevel == 4) {
+	if (text == "/stop" && Internal::Player::g_Player.operatorLevel == 4) {
 		PacketsOut::send_disconnect("Server is stopping.");
-		sceKernelDelayThread(5 * 1000 * 1000);
+		Internal::g_InternalServer->stop();
 		sceKernelExitGame();
 	}
 }
