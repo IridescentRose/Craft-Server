@@ -67,8 +67,11 @@ namespace Minecraft::Server::Protocol {
 	char oplevel;
 	Json::Value playerJSON;
 	Json::Value banned;
+	bool downfall;
+
 	int Login::login_start_packet_handler(PacketIn* p)
 	{
+		downfall = false;
 
 		username = decodeStringLE(*p);
 
@@ -128,14 +131,7 @@ namespace Minecraft::Server::Protocol {
 		for (int i = 0; i < banned.size(); i++) {
 			if (banned[i].asString() == username) {
 				//They're banned! Don't connect!.
-				PacketOut* p2 = new PacketOut();
-				p2->ID = 0x1A;
-
-				std::string build = "{\"text\":\"You are banned.\",\"color\":\"dark_red\"}";
-				encodeString(build, *p2);
-				g_NetMan->AddPacket(p2);
-				g_NetMan->SendPackets();
-				g_NetMan->m_Socket->Close();
+				Play::PacketsOut::send_disconnect("You are banned!", "dark_red");
 				return -1;
 			}
 		}
@@ -150,6 +146,10 @@ namespace Minecraft::Server::Protocol {
 		Play::PacketsOut::send_world_border();
 		Play::PacketsOut::send_time_update();
 		Play::PacketsOut::send_spawn_position();
+
+		if (downfall) {
+			Play::PacketsOut::send_change_gamestate(2, 0.0f);
+		}
 
 		return 0;
 	}
@@ -270,7 +270,14 @@ namespace Minecraft::Server::Protocol {
 	int Play::player_digging_handler(PacketIn* p) { utilityPrint("PLAYER_DIGGING Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::entity_action_handler(PacketIn* p) { utilityPrint("ENTITY_ACTION Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::steer_vehicle_handler(PacketIn* p) { utilityPrint("STEER_VEHICLE Triggered!", LOGGER_LEVEL_WARN); return 0; }
-	int Play::crafting_book_data_handler(PacketIn* p) { utilityPrint("CRAFTING_BOOK_DATA Triggered!", LOGGER_LEVEL_WARN); return 0; }
+	
+	int Play::crafting_book_data_handler(PacketIn* p) { 
+		utilityPrint("CRAFTING_BOOK_DATA Triggered!", LOGGER_LEVEL_TRACE);
+		//TODO: IMPL
+		PacketsOut::send_chat("Crafting book is not yet implemented...", "gold", "none", true);
+		return 0;
+	}
+
 	int Play::resource_pack_status_handler(PacketIn* p) { utilityPrint("RESOURCE_PACK_STATUS Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::advancement_tab_handler(PacketIn* p) { utilityPrint("ADVANCEMENT_TAB Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::held_item_change_handler(PacketIn* p) { utilityPrint("HELD_ITEM_CHANGE Triggered!", LOGGER_LEVEL_WARN); return 0; }
@@ -430,11 +437,17 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_keepalive(long long int
 	g_NetMan->SendPackets();
 }
 
-void Minecraft::Server::Protocol::Play::PacketsOut::send_chat(std::string text, std::string color, std::string format)
+void Minecraft::Server::Protocol::Play::PacketsOut::send_chat(std::string text, std::string color, std::string format, bool serverChat)
 {
 	PacketOut* p = new PacketOut();
 	p->ID = 0x0F;
-	std::string build = "{\"translate\":\"chat.type.text\",\"with\":[{\"text\":\"" + username + "\",\"clickEvent\":{\"action\":\"suggest_command\",\"value\":\"/msg " + username + " \"},\"hoverEvent\":{\"action\":\"show_entity\",\"value\":\"{id:" + uuid + ",name:" + username + "}\"},\"insertion\":\"" + username + "\"},{\"text\":\"" + text + "\"";
+	std::string build;
+	if (serverChat) {
+		build = "{\"text\":\"" + text + "\"";
+	}
+	else {
+		build = "{\"translate\":\"chat.type.text\",\"with\":[{\"text\":\"" + username + "\",\"clickEvent\":{\"action\":\"suggest_command\",\"value\":\"/msg " + username + " \"},\"hoverEvent\":{\"action\":\"show_entity\",\"value\":\"{id:" + uuid + ",name:" + username + "}\"},\"insertion\":\"" + username + "\"},{\"text\":\"" + text + "\"";
+	}
 
 	if (color != "default") {
 		build += ",\"color\":\"" + color + "\"";
@@ -569,6 +582,10 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 			fs << banned;
 			fs.close();
 			response = "Banned " + text.substr(5, text.length());
+
+			if (username == text.substr(5, text.length())) {
+				PacketsOut::send_disconnect("You were banned!", "dark_red");
+			}
 		}
 	}
 	else if (text.substr(0, 6) == "/unban") {
@@ -598,6 +615,16 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 			}
 		}
 	}
+	else if (text.substr(0, 5) == "/kick") {
+		if (oplevel < 1) {
+			response = "You do not have adequate permissions.";
+		}else{
+			if (username == text.substr(6, text.length())) {
+				PacketsOut::send_disconnect("You were kicked!", "green");
+			}
+			response = "Kicked player.";
+		}
+	}
 
 	else if (text.substr(0, 4) == "/say") {
 		if (oplevel < 1) {
@@ -605,6 +632,49 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 		}
 		else {
 			response = "[Server]: " + text.substr(4, text.length());
+		}
+	}
+	else if (text == "/toggledownfall") {
+		if (oplevel < 1) {
+			response = "You do not have adequate permissions.";
+		}
+		else {
+			response = "Toggling downfall.";
+			downfall = !downfall;
+
+			if (downfall) {
+				PacketsOut::send_change_gamestate(2, 0.0f);
+			}
+			else {
+				PacketsOut::send_change_gamestate(1, 0.0f);
+			}
+		}
+	}
+	else if (text.substr(0, 9) == "/gamemode") {
+		if (oplevel < 1) {
+			response = "You do not have adequate permissions.";
+		}
+		else {
+			int gmChange = g_Config.gamemode;
+			if (text.substr(10, text.length()) == "creative") {
+				gmChange = 1;
+			}else if (text.substr(10, text.length()) == "survival") {
+				gmChange = 0;
+			}else if (text.substr(10, text.length()) == "spectator") {
+				gmChange = 3;
+			}else if (text.substr(10, text.length()) == "adventure") {
+				gmChange = 2;
+			}
+			else {
+				//Do nothing.
+				response = "No such gamemode";
+				return;
+			}
+
+			if (gmChange != g_Config.gamemode) {
+				PacketsOut::send_change_gamestate(3, gmChange);
+				response = "Gamemode changed!";
+			}
 		}
 	}
 	else {
@@ -630,17 +700,36 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 	g_NetMan->SendPackets();
 
 	if (text == "/stop" && oplevel == 4) {
-		//Send a disconnect
-		PacketOut* p2 = new PacketOut();
-		p2->ID = 0x1A;
-
-		build = "{\"text\":\"Server is stopping.\",\"color\":\"gold\"}";
-		encodeString(build, *p2);
-		g_NetMan->AddPacket(p2);
-		g_NetMan->SendPackets();
-
-
+		PacketsOut::send_disconnect("Server is stopping.");
 		sceKernelDelayThread(5 * 1000 * 1000);
 		sceKernelExitGame();
 	}
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_disconnect(std::string reason, std::string color)
+{
+
+	//Send a disconnect
+	PacketOut* p2 = new PacketOut();
+	p2->ID = 0x1A;
+
+	std::string build = "{\"text\":\"" + reason + "\",\"color\":\"" + color + "\"}";
+	encodeString(build, *p2);
+	g_NetMan->AddPacket(p2);
+	g_NetMan->SendPackets();
+	g_NetMan->m_Socket->Close();
+
+
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_change_gamestate(uint8_t code, float value)
+{
+	PacketOut* p2 = new PacketOut();
+	p2->ID = 0x1E;
+
+	encodeByte(code, *p2);
+	encodeFloat(value, *p2);
+
+	g_NetMan->AddPacket(p2);
+	g_NetMan->SendPackets();
 }

@@ -15,9 +15,9 @@ using namespace Minecraft::Server;
 int main() {
 	Platform::initPlatform("Craft-Server");
 
-#ifdef CRAFT_SERVER_DEBUG
 	app_Logger->currentLevel = LOGGER_LEVEL_TRACE;
 	detail::core_Logger->currentLevel = LOGGER_LEVEL_TRACE;
+#ifdef CRAFT_SERVER_DEBUG
 
 	pspDebugScreenInit();
 	app_Logger->log("Debug Mode Enabled!");

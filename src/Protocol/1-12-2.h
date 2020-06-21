@@ -167,8 +167,12 @@ namespace Minecraft::Server::Protocol {
 			void send_spawn_position();
 
 			void send_keepalive(long long int ll);
-			void send_chat(std::string text, std::string color = "default", std::string format = "none");
+			void send_chat(std::string text, std::string color = "default", std::string format = "none", bool serverChat = false);
 			void send_chat_command(std::string text);
+
+			void send_disconnect(std::string reason, std::string color = "gold");
+
+			void send_change_gamestate(uint8_t code, float value);
 		}
 
 		namespace PacketEvents {
