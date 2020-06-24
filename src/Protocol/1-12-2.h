@@ -173,6 +173,7 @@ namespace Minecraft::Server::Protocol {
 			void send_disconnect(std::string reason, std::string color = "gold");
 
 			void send_change_gamestate(uint8_t code, float value);
+			void send_demo_chunk(int x, int z);
 		}
 
 		namespace PacketEvents {

@@ -20,6 +20,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Config.cpp" />
+    <ClCompile Include="src\Internal\Chunks\ChunkColumn.cpp" />
+    <ClCompile Include="src\Internal\Chunks\ChunkPalette.cpp" />
+    <ClCompile Include="src\Internal\Chunks\ChunkSection.cpp" />
     <ClCompile Include="src\Internal\InternalServer.cpp" />
     <ClCompile Include="src\Internal\Player\Player.cpp" />
     <ClCompile Include="src\Main.cpp" />
@@ -31,6 +34,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Config.h" />
+    <ClInclude Include="src\Internal\Chunks\ChunkColumn.h" />
+    <ClInclude Include="src\Internal\Chunks\ChunkDefines.h" />
+    <ClInclude Include="src\Internal\Chunks\ChunkPalette.h" />
+    <ClInclude Include="src\Internal\Chunks\ChunkSection.h" />
     <ClInclude Include="src\Internal\InternalServer.h" />
     <ClInclude Include="src\Internal\Player\Player.h" />
     <ClInclude Include="src\Networking\NetworkManager2.h" />

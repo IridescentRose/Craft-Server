@@ -142,6 +142,14 @@ namespace Minecraft::Server::Protocol {
 		Play::PacketsOut::send_hotbar_slot(0); //Slot 0
 		Play::PacketsOut::send_entity_status(eid, 24 + Internal::Player::g_Player.operatorLevel); //Make them op level 0
 		Play::PacketsOut::send_player_list_item();
+		for (int x = -3; x <= 3; x++) {
+			for (int z = -3; z <= 3; z++) {
+
+				Play::PacketsOut::send_demo_chunk(x, z);
+				sceKernelDelayThread(100 * 1000);
+			}
+		}
+
 		Play::PacketsOut::send_player_position_look();
 		Play::PacketsOut::send_world_border();
 		Play::PacketsOut::send_time_update();
@@ -732,4 +740,90 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_change_gamestate(uint8_
 
 	g_NetMan->AddPacket(p2);
 	g_NetMan->SendPackets();
+}
+
+#include "../Internal/Chunks/ChunkColumn.h"
+void Minecraft::Server::Protocol::Play::PacketsOut::send_demo_chunk(int xx, int zz)
+{
+	Internal::Chunks::ChunkColumn* chnkc = new Internal::Chunks::ChunkColumn(xx, zz);
+	Internal::Chunks::ChunkSection* chnks = new Internal::Chunks::ChunkSection(0);
+	chnks->generateTestData();
+	chnkc->addSection(chnks);
+
+	PacketOut* p2 = new PacketOut();
+	p2->ID = 0x20;
+
+	encodeInt(chnkc->getX(), *p2);
+	encodeInt(chnkc->getZ(), *p2);
+
+	encodeBool(true, *p2);
+
+	int mask = 0;
+	for (int i = 0; i < 16; i++) {
+		Internal::Chunks::ChunkSection* cs = chnkc->getSection(i);
+		if (cs != NULL && !cs->isEmpty()) {
+			mask |= (1 << i);
+		}
+	}
+	encodeVarInt(mask, p2->bytes);
+
+	std::vector<Network::byte> byteBuffer;
+	byteBuffer.clear();
+
+	std::vector<Network::byte> chunkSecBuffer;
+	chunkSecBuffer.clear();
+
+	byteBuffer.push_back(4);
+	byteBuffer.push_back(1);
+	byteBuffer.push_back(0b10000);
+
+	//FILL OUT CHUNK SECTION BUFFER
+	for (int x = 0; x < 16; x += 2) {
+		for (int y = 0; y < 16; y++) {
+			for (int z = 0; z < 16; z++) {
+				chunkSecBuffer.push_back(0);
+			}
+		}
+	}
+
+	encodeVarInt(chunkSecBuffer.size(), byteBuffer);
+	for (auto& b : chunkSecBuffer) {
+		byteBuffer.push_back(b);
+	}
+
+	for (int x = 0; x < 16; x += 2) {
+		for (int y = 0; y < 16; y++) {
+			for (int z = 0; z < 16; z++) {
+				byteBuffer.push_back(0x0);
+			}
+		}
+	}
+
+	for (int x = 0; x < 16; x += 2) {
+		for (int y = 0; y < 16; y++) {
+			for (int z = 0; z < 16; z++) {
+				byteBuffer.push_back(0xFF);
+			}
+		}
+	}
+
+	for (int x = 0; x < 16; x++) {
+		for (int z = 0; z < 16; z++) {
+			byteBuffer.push_back(chnkc->getBiomeAt(x, z));
+		}
+	}
+	int dataBufferSize = byteBuffer.size();
+
+	encodeVarInt(dataBufferSize, p2->bytes);
+	for (auto& b : byteBuffer) {
+		encodeByte(b, *p2);
+	}
+
+	encodeByte(0, *p2);
+
+	g_NetMan->AddPacket(p2);
+	g_NetMan->SendPackets();
+
+	delete chnkc;
+	delete chnks;
 }
