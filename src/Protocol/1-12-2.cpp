@@ -324,7 +324,13 @@ namespace Minecraft::Server::Protocol {
 	int Play::held_item_change_handler(PacketIn* p) { utilityPrint("HELD_ITEM_CHANGE Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::creative_inventory_action_handler(PacketIn* p) { utilityPrint("CREATIVE_INVENTORY_ACTION Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::update_sign_handler(PacketIn* p) { utilityPrint("UPDATE_SIGN Triggered!", LOGGER_LEVEL_WARN); return 0; }
-	int Play::animation_handler(PacketIn* p) { utilityPrint("ANIMATION Triggered!", LOGGER_LEVEL_WARN); return 0; }
+	
+	int Play::animation_handler(PacketIn* p) { 
+		//TODO: Do something about this for multiplayer. Otherwise I don't care.
+		//utilityPrint("ANIMATION Triggered!", LOGGER_LEVEL_WARN); 
+		return 0; 
+	}
+	
 	int Play::spectate_handler(PacketIn* p) { utilityPrint("SPECTATE Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::player_block_placement_handler(PacketIn* p) { utilityPrint("PLAYER_BLOCK_PLACEMENT Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::use_item_handler(PacketIn* p) { utilityPrint("USE_ITEM Triggered!", LOGGER_LEVEL_WARN); return 0; }
