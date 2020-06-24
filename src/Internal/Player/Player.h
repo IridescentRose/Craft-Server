@@ -7,6 +7,9 @@ namespace Minecraft::Server::Internal::Player {
 		uint8_t gamemode;
 		uint8_t operatorLevel;
 
+		double x, y, z;
+		float yaw, pitch;
+		bool onGround;
 	};
 
 	extern Player g_Player;

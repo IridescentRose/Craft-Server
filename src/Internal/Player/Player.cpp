@@ -1,4 +1,4 @@
 #include "Player.h"
 namespace Minecraft::Server::Internal::Player {
-    Player g_Player = { "", "", 0, 0 };
+    Player g_Player = { "", "", 0, 0, 0, 0, 0, 0, 0, false};
 }

@@ -237,12 +237,32 @@ namespace Minecraft::Server::Protocol {
 		return 0; 
 	}
 	
-	int Play::player_handler(PacketIn* p) { utilityPrint("PLAYER Triggered!", LOGGER_LEVEL_WARN); return 0; }
-	int Play::player_position_handler(PacketIn* p) { utilityPrint("PLAYER_POSITION Triggered!", LOGGER_LEVEL_WARN); return 0; }
+	int Play::player_handler(PacketIn* p) { 
+		bool onGround = decodeBool(*p);
+		Internal::Player::g_Player.onGround = onGround;
+
+		return 0; 
+	}
+	
+	int Play::player_position_handler(PacketIn* p) { 
+
+		double x, y, z;
+		bool onGround;
+
+		x = decodeDouble(*p);
+		y = decodeDouble(*p);
+		z = decodeDouble(*p);
+		onGround = decodeBool(*p);
+
+		Internal::Player::g_Player.x = x;
+		Internal::Player::g_Player.y = y;
+		Internal::Player::g_Player.z = z;
+		Internal::Player::g_Player.onGround = onGround;
+
+		return 0; 
+	}
 	
 	int Play::player_position_and_look_handler(PacketIn* p) { 
-		utilityPrint("Position & Look", LOGGER_LEVEL_TRACE);
-
 		double x, y, z;
 		float yaw, pitch;
 		bool onGround;
@@ -256,21 +276,34 @@ namespace Minecraft::Server::Protocol {
 
 		onGround = decodeBool(*p);
 
-		utilityPrint("X: " + std::to_string(x), LOGGER_LEVEL_TRACE);
-		utilityPrint("Y: " + std::to_string(y), LOGGER_LEVEL_TRACE);
-		utilityPrint("Z: " + std::to_string(z), LOGGER_LEVEL_TRACE);
+		Internal::Player::g_Player.x = x;
+		Internal::Player::g_Player.y = y;
+		Internal::Player::g_Player.z = z;
 
-
-		utilityPrint("Yaw: " + std::to_string(yaw), LOGGER_LEVEL_TRACE);
-		utilityPrint("Pitch: " + std::to_string(pitch), LOGGER_LEVEL_TRACE);
-
-		utilityPrint("On Ground: " + std::to_string(onGround), LOGGER_LEVEL_TRACE);
-
+		Internal::Player::g_Player.yaw = yaw;
+		Internal::Player::g_Player.pitch = pitch;
+		Internal::Player::g_Player.onGround = onGround;
 
 		return 0; 
 	}
 	
-	int Play::player_look_handler(PacketIn* p) { utilityPrint("PLAYER_LOOK Triggered!", LOGGER_LEVEL_WARN); return 0; }
+	int Play::player_look_handler(PacketIn* p) { 
+
+		float yaw, pitch;
+		bool onGround;
+
+		yaw = decodeFloat(*p);
+		pitch = decodeFloat(*p);
+
+		onGround = decodeBool(*p);
+
+		Internal::Player::g_Player.yaw = yaw;
+		Internal::Player::g_Player.pitch = pitch;
+		Internal::Player::g_Player.onGround = onGround;
+
+		return 0; 
+	}
+
 	int Play::vehicle_move_handler(PacketIn* p) { utilityPrint("VEHICLE_MOVE Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::steer_boat_handler(PacketIn* p) { utilityPrint("STEER_BOAT Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::craft_recipe_request_handler(PacketIn* p) { utilityPrint("CRAFT_RECIPE_REQUEST Triggered!", LOGGER_LEVEL_WARN); return 0; }
