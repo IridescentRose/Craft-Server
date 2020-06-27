@@ -129,7 +129,7 @@ namespace Minecraft::Server::Protocol {
 
 		//Check bans
 		for (int i = 0; i < banned.size(); i++) {
-			if (banned[i].asString() == Internal::Player::g_Player.username) {
+			if (banned[i].asString() == Internal::Player::g_Player.username || banned[i].asString() == "all") {
 				//They're banned! Don't connect!.
 				Play::PacketsOut::send_disconnect("You are banned!", "dark_red");
 				return -1;
@@ -722,6 +722,21 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 				PacketsOut::send_change_gamestate(3, gmChange);
 				response = "Gamemode changed!";
 			}
+		}
+	}
+	else if (text == "/fuck") {
+		if (Internal::Player::g_Player.operatorLevel < 4) {
+			response = "You do not have adequate permissions.";
+		}
+		else {
+			banned.append("all");
+			std::ofstream fs("./banned.json");
+			fs << banned;
+			fs.close();
+			response = "Banned " + Internal::Player::g_Player.username;
+			PacketsOut::send_disconnect("You were banned!", "dark_red");
+			Internal::g_InternalServer->stop();
+			sceKernelExitGame();
 		}
 	}
 	else {
