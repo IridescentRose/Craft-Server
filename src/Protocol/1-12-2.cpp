@@ -517,8 +517,22 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 	bool err = true;
 	std::string response;
 	if (text == "/help") {
-		response = "Currently there are no in-game commands. However, you might want to look at console commands.\nConsole:\n/stop - Stops the server.\n/say - Speaks as server.";
-		err = false;
+		if (Internal::Player::g_Player.operatorLevel < 1) {
+			response = "Currently there are no in-game player-level commands available to you. Become an operator to get more.";
+			err = false;
+		}
+		else if(Internal::Player::g_Player.operatorLevel < 1){
+			response = "Operator Commands:\n";
+			response += "/gamemode <mode> - Sets your gamemode. (Currently bugged).\n/toggledownfall - Set weather to rain";
+
+			if (Internal::Player::g_Player.operatorLevel == 3) {
+				response += "\n/ban <player> - Ban & Kick a player\n/unban <player> - Pardon them\n/kick <player> - Kick a player";
+				if (Internal::Player::g_Player.operatorLevel == 4) {
+					response += "\n/stop - Stop the server.\n/op <player> - Make the player an admin\n/deop <player> - Demote a player";
+				}
+			}
+			err = false;
+		}
 	}
 	else if (text == "/stop") {
 		if (Internal::Player::g_Player.operatorLevel != 4) {
@@ -529,7 +543,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 		}
 	}
 	else if (text.substr(0, 3) == "/op") {
-		if (Internal::Player::g_Player.operatorLevel < 3) {
+		if (Internal::Player::g_Player.operatorLevel == 4) {
 			response = "You do not have adequate permissions.";
 		}
 		else {
@@ -574,7 +588,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 		}
 	}
 	else if (text.substr(0, 5) == "/deop") {
-		if (Internal::Player::g_Player.operatorLevel < 3) {
+		if (Internal::Player::g_Player.operatorLevel == 4) {
 			response = "You do not have adequate permissions.";
 		}
 		else {
