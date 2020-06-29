@@ -178,6 +178,7 @@ namespace Minecraft::Server::Protocol {
 
 			void send_chunk(Internal::Chunks::ChunkColumn* chnkc, bool first);
 			void send_test_update(int x, int z);
+			void send_unload_chunk(int x, int z);
 		}
 
 		namespace PacketEvents {

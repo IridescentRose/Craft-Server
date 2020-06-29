@@ -157,24 +157,7 @@ namespace Minecraft::Server::Protocol {
 		Play::PacketsOut::send_player_list_item();
 
 
-		sceKernelDelayThread(50 * 1000);
-
-
-		for (int x = -3; x < 3; x++) {
-			for (int z = -3; z < 3; z++) {
-				Internal::Chunks::ChunkColumn* chnkc = new Internal::Chunks::ChunkColumn(x, z);
-				Internal::Chunks::ChunkSection* chnks = new Internal::Chunks::ChunkSection(0);
-				chnks->generateTestData();
-				chnkc->addSection(chnks);
-
-				sceKernelDelayThread(50 * 1000);
-				Play::PacketsOut::send_chunk(chnkc, true);
-				sceKernelDelayThread(50 * 1000);
-
-				delete chnkc;
-				delete chnks;
-			}
-		}
+		sceKernelDelayThread(100 * 1000);
 
 		Play::PacketsOut::send_player_position_look();
 		Play::PacketsOut::send_world_border();
@@ -1026,9 +1009,6 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chunk(Internal::Chunks:
 		}
 	}
 
-
-
-
 	p->buffer->WriteBEUInt8(0);
 
 	g_NetMan->AddPacket(p);
@@ -1043,6 +1023,17 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_test_update(int x, int 
 		(static_cast<uint64_t>(15 & 0xFFF) << 26) |
 		(static_cast<uint64_t>(z * 16 & 0x3FFFFFF))); //POS
 	p->buffer->WriteVarInt32(0);
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_unload_chunk(int x, int z)
+{
+	PacketOut* p = new PacketOut(64);
+	p->ID = 0x1D;
+	p->buffer->WriteBEInt32(x);
+	p->buffer->WriteBEInt32(z);
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
