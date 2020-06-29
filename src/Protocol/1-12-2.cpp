@@ -159,17 +159,22 @@ namespace Minecraft::Server::Protocol {
 
 		sceKernelDelayThread(50 * 1000);
 
-		
-		Internal::Chunks::ChunkColumn* chnkc = new Internal::Chunks::ChunkColumn(0, 0);
-		Internal::Chunks::ChunkSection* chnks = new Internal::Chunks::ChunkSection(0);
-		chnks->generateTestData();
-		chnkc->addSection(chnks);
 
-		sceKernelDelayThread(50 * 1000);
-		Play::PacketsOut::send_chunk(chnkc, true);
+		for (int x = -3; x < 3; x++) {
+			for (int z = -3; z < 3; z++) {
+				Internal::Chunks::ChunkColumn* chnkc = new Internal::Chunks::ChunkColumn(x, z);
+				Internal::Chunks::ChunkSection* chnks = new Internal::Chunks::ChunkSection(0);
+				chnks->generateTestData();
+				chnkc->addSection(chnks);
 
-		delete chnkc;
-		delete chnks;
+				sceKernelDelayThread(50 * 1000);
+				Play::PacketsOut::send_chunk(chnkc, true);
+				sceKernelDelayThread(50 * 1000);
+
+				delete chnkc;
+				delete chnks;
+			}
+		}
 
 		Play::PacketsOut::send_player_position_look();
 		Play::PacketsOut::send_world_border();
@@ -422,7 +427,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_player_position_look()
 	PacketOut* p = new PacketOut(64);
 	p->ID = 0x2F;
 	p->buffer->WriteBEDouble(0);
-	p->buffer->WriteBEDouble(63);
+	p->buffer->WriteBEDouble(16);
 	p->buffer->WriteBEDouble(0);
 	p->buffer->WriteBEFloat(0);
 	p->buffer->WriteBEFloat(0);
@@ -1001,7 +1006,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chunk(Internal::Chunks:
 		for (int y = 0; y < 16; y++) {
 			for (int z = 0; z < 16; z++) {
 				for (int x = 0; x < 16; x += 2) {
-					p->buffer->WriteBEUInt8(cs->getLightingAt(x, y, z));
+					p->buffer->WriteBEUInt8(cs->getLightingAt(x, y, z) | cs->getLightingAt(x + 1, y, z) << 4);
 				}
 			}
 		}
@@ -1009,7 +1014,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chunk(Internal::Chunks:
 		for (int y = 0; y < 16; y++) {
 			for (int z = 0; z < 16; z++) {
 				for (int x = 0; x < 16; x += 2) {
-					p->buffer->WriteBEUInt8(cs->getSkyLightAt(x, y, z));
+					p->buffer->WriteBEUInt8(cs->getSkyLightAt(x, y, z) | cs->getSkyLightAt(x + 1, y, z) << 4);
 				}
 			}
 		}
