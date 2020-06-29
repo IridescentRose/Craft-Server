@@ -941,7 +941,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chunk(Internal::Chunks:
 
 	size_t ChunkSize = (
 		ChunkSectionSize * numSections +
-		256
+		256 
 		);
 	p->buffer->WriteVarInt32(ChunkSize);
 
@@ -1010,7 +1010,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chunk(Internal::Chunks:
 	}
 
 	p->buffer->WriteBEUInt8(0);
-
+	
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
 }

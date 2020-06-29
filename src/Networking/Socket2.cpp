@@ -2,6 +2,7 @@
 #include <sys/socket.h>
 #include <fcntl.h>
 #include "NetworkManager2.h"
+#include <netinet/tcp.h>
 #include "../Protocol/1-12-2.h"
 namespace Minecraft::Server {
 	ServerSocket::ServerSocket(uint16_t port)
@@ -40,6 +41,12 @@ namespace Minecraft::Server {
 		if (m_Connection < 0) {
 			throw std::runtime_error("Fatal: Could not accept connection. Errno: " + std::to_string(errno));
 		}
+
+		int yes = 1;
+		if (setsockopt(m_Connection, IPPROTO_TCP, TCP_NODELAY, &yes, sizeof(yes)) == -1) {
+			throw std::runtime_error("Fatal: Could not set no delay! Errno " + std::to_string(errno));
+		}
+
 
 		utilityPrint("New Connection from " + std::to_string(inet_ntoa(sockaddr.sin_addr)) + " on port " + std::to_string(ntohs(sockaddr.sin_port)), LOGGER_LEVEL_INFO );
 

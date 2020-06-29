@@ -82,6 +82,7 @@ namespace Minecraft::Server::Internal {
 			}
 
 			//Make new
+			sceKernelDelayThread(50 * 1000);
 			for (auto chk : needed) {
 				if (chunkMap.find(chk) == chunkMap.end()) {
 					ChunkColumn* chunk = new ChunkColumn(chk.x, chk.y);
@@ -89,9 +90,9 @@ namespace Minecraft::Server::Internal {
 					chks->generateTestData();
 					chunk->addSection(chks);
 
-					sceKernelDelayThread(100 * 1000);
+					sceKernelDelayThread(50 * 1000);
 					Protocol::Play::PacketsOut::send_chunk(chunk, true);
-					sceKernelDelayThread(100 * 1000);
+					sceKernelDelayThread(50 * 1000);
 					chunkMap.emplace(chk, std::move(chunk));
 				}
 			}

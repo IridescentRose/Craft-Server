@@ -47,7 +47,9 @@ namespace Minecraft::Server {
 
 			Utilities::detail::core_Logger->log("Sending packet with ID: " + std::to_string(packetQueue.front()->ID), Utilities::LOGGER_LEVEL_DEBUG);
 			//Send over socket
+			sceKernelDcacheWritebackInvalidateAll();
 			m_Socket->Send(bbuf->GetUsedSpace(), bbuf->m_Buffer);
+
 
 			delete bbuf;
 			delete packetQueue.front()->buffer;
