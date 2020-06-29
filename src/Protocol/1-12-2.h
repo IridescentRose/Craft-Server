@@ -174,6 +174,7 @@ namespace Minecraft::Server::Protocol {
 
 			void send_change_gamestate(uint8_t code, float value);
 			void send_demo_chunk(int x, int z);
+			void send_test_update(int x, int z);
 		}
 
 		namespace PacketEvents {

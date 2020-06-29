@@ -40,6 +40,8 @@ int main() {
 		sceKernelDelayThread(50 * 1000);
 	}
 
+
+	g_NetworkDriver.Cleanup();
 	Platform::exitPlatform();
 	return 0;
 }

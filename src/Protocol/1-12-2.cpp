@@ -153,13 +153,14 @@ namespace Minecraft::Server::Protocol {
 		Play::PacketsOut::send_server_difficulty();
 		Play::PacketsOut::send_player_abilities();
 		Play::PacketsOut::send_hotbar_slot(0); //Slot 0
-		Play::PacketsOut::send_entity_status(eid, 24 + Internal::Player::g_Player.operatorLevel); //Make them op level 0
+		Play::PacketsOut::send_entity_status(eid, 24 + Internal::Player::g_Player.operatorLevel);
 		Play::PacketsOut::send_player_list_item();
+
 		for (int x = -3; x <= 3; x++) {
 			for (int z = -3; z <= 3; z++) {
-
 				Play::PacketsOut::send_demo_chunk(x, z);
-				sceKernelDelayThread(100 * 1000);
+				Play::PacketsOut::send_test_update(x, z);
+				sceKernelDelayThread(50 * 1000);
 			}
 		}
 
@@ -170,6 +171,15 @@ namespace Minecraft::Server::Protocol {
 
 		if (downfall) {
 			Play::PacketsOut::send_change_gamestate(2, 0.0f);
+		}
+
+
+		for (int x = -3; x <= 3; x++) {
+			for (int z = -3; z <= 3; z++) {
+				//Play::PacketsOut::send_demo_chunk(x, z);
+				Play::PacketsOut::send_test_update(x, z);
+				sceKernelDelayThread(5 * 1000);
+			}
 		}
 
 		return 0;
@@ -897,4 +907,17 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_demo_chunk(int xx, int 
 
 	delete chnkc;
 	delete chnks;
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_test_update(int x, int z)
+{
+	PacketOut* p = new PacketOut(64);
+	p->ID = 0x0B;
+	p->buffer->WriteBEUInt64((static_cast<uint64_t>(x * 16 & 0x3FFFFFF) << 38) |
+		(static_cast<uint64_t>(15 & 0xFFF) << 26) |
+		(static_cast<uint64_t>(z * 16 & 0x3FFFFFF))); //POS
+	p->buffer->WriteVarInt32(0);
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
 }
