@@ -156,13 +156,20 @@ namespace Minecraft::Server::Protocol {
 		Play::PacketsOut::send_entity_status(eid, 24 + Internal::Player::g_Player.operatorLevel);
 		Play::PacketsOut::send_player_list_item();
 
-		for (int x = -3; x <= 3; x++) {
-			for (int z = -3; z <= 3; z++) {
-				Play::PacketsOut::send_demo_chunk(x, z);
-				Play::PacketsOut::send_test_update(x, z);
-				sceKernelDelayThread(50 * 1000);
-			}
-		}
+
+		sceKernelDelayThread(50 * 1000);
+
+		
+		Internal::Chunks::ChunkColumn* chnkc = new Internal::Chunks::ChunkColumn(0, 0);
+		Internal::Chunks::ChunkSection* chnks = new Internal::Chunks::ChunkSection(0);
+		chnks->generateTestData();
+		chnkc->addSection(chnks);
+
+		sceKernelDelayThread(50 * 1000);
+		Play::PacketsOut::send_chunk(chnkc, true);
+
+		delete chnkc;
+		delete chnks;
 
 		Play::PacketsOut::send_player_position_look();
 		Play::PacketsOut::send_world_border();
@@ -171,15 +178,6 @@ namespace Minecraft::Server::Protocol {
 
 		if (downfall) {
 			Play::PacketsOut::send_change_gamestate(2, 0.0f);
-		}
-
-
-		for (int x = -3; x <= 3; x++) {
-			for (int z = -3; z <= 3; z++) {
-				//Play::PacketsOut::send_demo_chunk(x, z);
-				Play::PacketsOut::send_test_update(x, z);
-				sceKernelDelayThread(5 * 1000);
-			}
 		}
 
 		return 0;
@@ -815,7 +813,6 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_change_gamestate(uint8_
 	g_NetMan->SendPackets();
 }
 
-#include "../Internal/Chunks/ChunkColumn.h"
 void Minecraft::Server::Protocol::Play::PacketsOut::send_demo_chunk(int xx, int zz)
 {
 	Internal::Chunks::ChunkColumn* chnkc = new Internal::Chunks::ChunkColumn(xx, zz);
@@ -832,10 +829,16 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_demo_chunk(int xx, int 
 	p->buffer->WriteBool(true);
 
 	int mask = 0;
+	int numSections = 0;
+	std::vector<Internal::Chunks::ChunkSection*> sections;
+	sections.clear();
+
 	for (int i = 0; i < 16; i++) {
 		Internal::Chunks::ChunkSection* cs = chnkc->getSection(i);
 		if (cs != NULL && !cs->isEmpty()) {
 			mask |= (1 << i);
+			numSections++;
+			sections.push_back(cs);
 		}
 	}
 	
@@ -907,6 +910,124 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_demo_chunk(int xx, int 
 
 	delete chnkc;
 	delete chnks;
+}
+
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_chunk(Internal::Chunks::ChunkColumn* chnkc, bool first)
+{
+	PacketOut* p = new PacketOut(512 KiB);
+	p->ID = 0x20; //CHUNK
+
+	p->buffer->WriteBEInt32(chnkc->getX()); //Coord
+	p->buffer->WriteBEInt32(chnkc->getZ()); //Coord
+
+	p->buffer->WriteBool(first); //Ground up continuous
+	
+	int mask = 0;
+	int numSections = 0;
+	std::vector<Internal::Chunks::ChunkSection*> sections;
+	sections.clear();
+
+	for (int i = 0; i < 16; i++) {
+		Internal::Chunks::ChunkSection* cs = chnkc->getSection(i);
+		if (cs != NULL && !cs->isEmpty()) {
+			mask |= (1 << i);
+			numSections++;
+			sections.push_back(cs);
+		}
+	}
+
+	p->buffer->WriteVarInt32(mask);
+
+	const size_t BitsPerEntry = 13;
+	const size_t bitmask = (1 << BitsPerEntry) - 1;
+
+	const size_t ChunkSectionDataArraySize = (16 * 16 * 16 * BitsPerEntry) / 8 / 8;  // Convert from bit count to long count
+	size_t ChunkSectionSize = (
+		1 +                                // Bits per block - set to 13, so the global palette is used and the palette has a length of 0
+		1 +                                // Palette length
+		2 +                                // Data array length VarInt - 2 bytes for the current value
+		ChunkSectionDataArraySize * 8 +    // Actual block data - multiplied by 8 because first number is longs
+		16 * 16 * 16  // Block light
+		) ;  //Data
+
+	size_t ChunkSize = (
+		ChunkSectionSize * numSections +
+		256
+		);
+	p->buffer->WriteVarInt32(ChunkSize);
+
+	for (auto& cs : sections) {
+		p->buffer->WriteBEUInt8(static_cast<uint8_t>(BitsPerEntry));
+		p->buffer->WriteVarInt32(0);  // Palette length is 0
+		p->buffer->WriteVarInt32(static_cast<uint32_t>(ChunkSectionDataArraySize));
+
+		uint64_t TempLong = 0;  // Temporary value that will be stored into
+		uint64_t CurrentlyWrittenIndex = 0;  // "Index" of the long that would be written to
+
+		for (size_t Index = 0; Index < 16 * 16 * 16; Index++)
+		{
+			uint64_t Value = cs->blocks[Index];
+			Value &= bitmask;  // It shouldn't go out of bounds, but it's still worth being careful
+
+			// Painful part where we write data into the long array.  Based off of the normal code.
+			size_t BitPosition = Index * BitsPerEntry;
+			size_t FirstIndex = BitPosition / 64;
+			size_t SecondIndex = ((Index + 1) * BitsPerEntry - 1) / 64;
+			size_t BitOffset = BitPosition % 64;
+
+			if (FirstIndex != CurrentlyWrittenIndex)
+			{
+				// Write the current data before modifiying it.
+				p->buffer->WriteBEUInt64(TempLong);
+				TempLong = 0;
+				CurrentlyWrittenIndex = FirstIndex;
+			}
+
+			TempLong |= (Value << BitOffset);
+
+			if (FirstIndex != SecondIndex)
+			{
+				// Part of the data is now in the second long; write the first one first
+				p->buffer->WriteBEUInt64(TempLong);
+				CurrentlyWrittenIndex = SecondIndex;
+
+				TempLong = (Value >> (64 - BitOffset));
+			}
+		}
+		// The last long will generally not be written
+		p->buffer->WriteBEUInt64(TempLong);
+
+		for (int y = 0; y < 16; y++) {
+			for (int z = 0; z < 16; z++) {
+				for (int x = 0; x < 16; x += 2) {
+					p->buffer->WriteBEUInt8(cs->getLightingAt(x, y, z));
+				}
+			}
+		}
+
+		for (int y = 0; y < 16; y++) {
+			for (int z = 0; z < 16; z++) {
+				for (int x = 0; x < 16; x += 2) {
+					p->buffer->WriteBEUInt8(cs->getSkyLightAt(x, y, z));
+				}
+			}
+		}
+	}
+
+	for (int x = 0; x < 16; x++) {
+		for (int z = 0; z < 16; z++) {
+			p->buffer->WriteBEUInt8(chnkc->getBiomeAt(x, z));
+		}
+	}
+
+
+
+
+	p->buffer->WriteBEUInt8(0);
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
 }
 
 void Minecraft::Server::Protocol::Play::PacketsOut::send_test_update(int x, int z)
