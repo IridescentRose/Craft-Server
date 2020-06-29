@@ -57,36 +57,45 @@ namespace Minecraft::Server {
 
 	Network::PacketIn* ServerSocket::Recv()
 	{
-		Network::PacketIn* pIn = new Network::PacketIn();
-
-		std::vector<Network::byte> len;
-		Network::byte newByte;
-		int res = recv(m_Connection, &newByte, 1, 0);
+		std::vector<byte> len;
+		byte newByte;
+		int res = recv(m_Connection, &newByte, 1, MSG_PEEK);
 
 		if (res > 0) {
+			unsigned char data[5] = { 0 };
+			size_t dataLen = 0;
+			do {
+				size_t totalReceived = 0;
+				while (1 > totalReceived) {
+					size_t received = recv(m_Connection, &data[dataLen] + totalReceived, 1 - totalReceived, 0);
+					if (received <= 0) {
+						sceKernelDelayThread(300);
+					}
+					else {
+						totalReceived += received;
+					}
+				}
+			} while ((data[dataLen++] & 0x80) != 0);
 
-			while (newByte & 128) {
-				if (res > 0) {
-					len.push_back(newByte);
-					res = recv(m_Connection, &newByte, 1, 0);
-				}
-				else if (res == 0) {
-					utilityPrint("Socket connection closed!", Utilities::LOGGER_LEVEL_WARN);
-					connected = false;
-					return NULL;
-				}
-				else {
-					sceKernelDelayThread(300);
-				}
-			}
-			len.push_back(newByte);
+			int readed = 0;
+			int result = 0;
+			char read;
+			do {
+				read = data[readed];
+				int value = (read & 0b01111111);
+				result |= (value << (7 * readed));
+				readed++;
+			} while ((read & 0b10000000) != 0);
 
-			//We now have the length stored in len
-			int length = Network::decodeVarInt(len);
+
+			int length = result;
+
+			PacketIn* pIn = new PacketIn(length);
+			Utilities::detail::core_Logger->log("LENGTH: " + std::to_string(length), Utilities::LOGGER_LEVEL_DEBUG);
 
 			int totalTaken = 0;
 
-			Network::byte* b = new Network::byte[length];
+			byte* b = new byte[length];
 			for (int i = 0; i < length; i++) {
 				b[i] = 0;
 			}
@@ -96,11 +105,6 @@ namespace Minecraft::Server {
 				if (res > 0) {
 					totalTaken += res;
 				}
-				else if (res == 0) {
-					utilityPrint("Socket connection closed!", Utilities::LOGGER_LEVEL_WARN);
-					connected = false;
-					return NULL;
-				}
 				else {
 					sceKernelDelayThread(300);
 				}
@@ -108,12 +112,20 @@ namespace Minecraft::Server {
 
 
 			for (int i = 0; i < length; i++) {
-				pIn->bytes.push_back(b[i]);
+				pIn->buffer->WriteBEUInt8(b[i]);
 			}
 
-			pIn->pos = 0;
+			if (pIn != NULL && pIn->buffer->GetUsedSpace() > 0) {
+				uint8_t t = 0;
+				pIn->buffer->ReadBEUInt8(t);
+				pIn->ID = t;
+			}
+			else {
+				pIn->ID = -1;
+			}
 
-			pIn->ID = Network::decodeByte(*pIn);
+			Utilities::detail::core_Logger->log("Received Packet!", Utilities::LOGGER_LEVEL_DEBUG);
+			Utilities::detail::core_Logger->log("Packet ID: " + std::to_string(pIn->ID), Utilities::LOGGER_LEVEL_DEBUG);
 
 			return pIn;
 		}
@@ -122,7 +134,7 @@ namespace Minecraft::Server {
 		}
 	}
 
-	void ServerSocket::Send(size_t size, Network::byte* buffer)
+	void ServerSocket::Send(size_t size, char* buffer)
 	{
 		int res = send(m_Connection, buffer, size, 0);
 		if (res < 0) {

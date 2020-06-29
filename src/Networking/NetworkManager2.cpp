@@ -21,25 +21,36 @@ namespace Minecraft::Server {
 	}
 	void NetworkManager::SendPackets()
 	{
-		std::vector<byte> endByteBuffer;
+		Utilities::detail::core_Logger->log("Sending Network Packet Queue");
+
+
 		int len = packetQueue.size();
 		for (int i = 0; i < len; i++) {
-			endByteBuffer.clear();
+			int packetLength;
 
-			int packetLength = packetQueue.front()->bytes.size() + 1;
+			packetLength = packetQueue.front()->buffer->GetUsedSpace() + 1;
+			
+			ByteBuffer* bbuf = new ByteBuffer(packetLength + 5); //512 KB
 
 			//Header
-			encodeVarInt(packetLength, endByteBuffer);
-			encodeByte(packetQueue.front()->ID, endByteBuffer);
+			bbuf->WriteVarInt32(packetLength);
 
+			bbuf->WriteBEUInt8(packetQueue.front()->ID);
+
+			packetQueue.front()->buffer->ResetRead();
 			//Add body
-			for (int x = 0; x < packetQueue.front()->bytes.size(); x++) {
-				endByteBuffer.push_back(packetQueue.front()->bytes[x]);
+			for (int i = 0; i < packetQueue.front()->buffer->GetUsedSpace(); i++) {
+				uint8_t temp;
+				packetQueue.front()->buffer->ReadBEUInt8(temp);
+				bbuf->WriteBEUInt8(temp);
 			}
 
+			Utilities::detail::core_Logger->log("Sending packet with ID: " + std::to_string(packetQueue.front()->ID), Utilities::LOGGER_LEVEL_DEBUG);
 			//Send over socket
-			m_Socket->Send(endByteBuffer.size(), endByteBuffer.data());
+			m_Socket->Send(bbuf->GetUsedSpace(), bbuf->m_Buffer);
 
+			delete bbuf;
+			delete packetQueue.front()->buffer;
 			delete packetQueue.front();
 			packetQueue.pop();
 		}

@@ -13,14 +13,25 @@ namespace Minecraft::Server::Protocol {
 	int Handshake::handshake_packet_handler(PacketIn* p)
 	{
 
-		int getVersion = decodeVarInt(*p);
+		uint32_t getVersion;
+		p->buffer->ReadVarInt32(getVersion);
 		
-		decodeString(*p);
-		decodeShort(*p);
+		std::string ip;
+		p->buffer->ReadVarUTF8String(ip);
 
-		int nextStatus = decodeVarInt(*p);
+		uint16_t port;
+		p->buffer->ReadBEUInt16(port);
+
+		uint8_t state;
+		p->buffer->ReadBEUInt8(state);
 		
-		g_NetMan->m_Socket->setConnectionStatus(nextStatus);
+		g_NetMan->m_Socket->setConnectionStatus(state);
+
+
+		utilityPrint(std::to_string(getVersion), LOGGER_LEVEL_DEBUG);
+		utilityPrint(ip, LOGGER_LEVEL_DEBUG);
+		utilityPrint(std::to_string(port), LOGGER_LEVEL_DEBUG);
+		utilityPrint(std::to_string((int)state), LOGGER_LEVEL_DEBUG);
 
 		return 0;
 	}
@@ -33,20 +44,21 @@ namespace Minecraft::Server::Protocol {
 
 	int Status::ping_packet_handler(PacketIn* p)
 	{
-		uint64_t l = decodeLong(*p);
+		uint64_t l;
+		p->buffer->ReadBEUInt64(l);
+
 		PacketsOut::send_pong(l);
 		return 0;
 	}
 
 	void Status::PacketsOut::send_response()
 	{
-		PacketOut* p2 = new PacketOut();
-		p2->bytes.clear();
+		PacketOut* p2 = new PacketOut(512);
 		p2->ID = 0x00;
 
 		std::string st = "{\"description\":{\"text\":\"" + g_Config.motd + "\"},\"players\":{\"max\":" + std::to_string((int)g_Config.max_players) + ",\"online\":0},\"version\":{\"name\":\"1.12.2\",\"protocol\":340}}";
+		p2->buffer->WriteVarUTF8String(st);
 
-		encodeStringLE(st, *p2);
 
 		g_NetMan->AddPacket(p2);
 		g_NetMan->SendPackets();
@@ -54,9 +66,10 @@ namespace Minecraft::Server::Protocol {
 
 	void Status::PacketsOut::send_pong(uint64_t l)
 	{
-		PacketOut* p2 = new PacketOut();
+		PacketOut* p2 = new PacketOut(9);
 		p2->ID = 0x01;
-		encodeLong(l, (*p2));
+
+		p2->buffer->WriteBEUInt64(l);
 
 		g_NetMan->AddPacket(p2);
 		g_NetMan->SendPackets();
@@ -73,7 +86,7 @@ namespace Minecraft::Server::Protocol {
 	{
 		downfall = false;
 
-		Internal::Player::g_Player.username = decodeStringLE(*p);
+		p->buffer->ReadVarUTF8String(Internal::Player::g_Player.username);
 
 		utilityPrint(Internal::Player::g_Player.username + " is attempting to join", LOGGER_LEVEL_INFO);
 
@@ -163,10 +176,10 @@ namespace Minecraft::Server::Protocol {
 	}
 	void Login::PacketsOut::send_login_success(std::string username)
 	{
-		PacketOut* p2 = new PacketOut();
+		PacketOut* p2 = new PacketOut(80);
 		p2->ID = 0x02;
-		encodeStringLE(Internal::Player::g_Player.uuid, *p2);
-		encodeStringLE(username, *p2);
+		p2->buffer->WriteVarUTF8String(Internal::Player::g_Player.uuid);
+		p2->buffer->WriteVarUTF8String(username);
 
 		g_NetMan->AddPacket(p2);
 		g_NetMan->SendPackets();
@@ -181,7 +194,8 @@ namespace Minecraft::Server::Protocol {
 	int Play::tab_complete_handler(PacketIn* p) { utilityPrint("TAB_COMPLETE Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	
 	int Play::chat_message_handler(PacketIn* p) { 
-		std::string text = decodeStringNonNullLE(*p);
+		std::string text;
+		p->buffer->ReadVarUTF8String(text);
 
 		if(text.at(0) != '/'){
 			utilityPrint(Internal::Player::g_Player.username + ": " + text, LOGGER_LEVEL_INFO);
@@ -199,12 +213,19 @@ namespace Minecraft::Server::Protocol {
 	int Play::client_settings_handler(PacketIn* p) { 
 		utilityPrint("Client Settings", LOGGER_LEVEL_TRACE);
 
-		std::string locale = decodeStringNonNullLE(*p);
-		uint8_t renderDistance = decodeByte(*p);
-		uint8_t chatMode = decodeByte(*p);
-		bool colors = decodeBool(*p);
-		uint8_t displayed = decodeByte(*p);
-		uint8_t mainhand = decodeByte(*p);
+		std::string locale;
+		p->buffer->ReadVarUTF8String(locale);
+
+		uint8_t renderDistance;
+		p->buffer->ReadBEUInt8(renderDistance);
+		uint8_t chatMode;
+		p->buffer->ReadBEUInt8(chatMode);
+		bool colors;
+		p->buffer->ReadBool(colors);
+		uint8_t displayed;
+		p->buffer->ReadBEUInt8(displayed);
+		uint8_t mainhand;
+		p->buffer->ReadBEUInt8(mainhand);
 
 		utilityPrint("Locale: " + locale, LOGGER_LEVEL_TRACE);
 		utilityPrint("Render: " + std::to_string((int)renderDistance), LOGGER_LEVEL_TRACE);
@@ -223,8 +244,10 @@ namespace Minecraft::Server::Protocol {
 	int Play::plugin_message_handler(PacketIn* p) { 
 		utilityPrint("Plugin Message", LOGGER_LEVEL_TRACE); 
 
-		std::string channel = decodeStringNonNullLE(*p);
-		std::string data = decodeStringNonNullLE(*p);
+		std::string channel;
+		p->buffer->ReadVarUTF8String(channel);
+		std::string data;
+		p->buffer->ReadVarUTF8String(data);
 		utilityPrint("Channel: " + channel, LOGGER_LEVEL_TRACE);
 		utilityPrint("Data: " + data, LOGGER_LEVEL_TRACE);
 
@@ -237,69 +260,39 @@ namespace Minecraft::Server::Protocol {
 		return 0; 
 	}
 	
-	int Play::player_handler(PacketIn* p) { 
-		bool onGround = decodeBool(*p);
-		Internal::Player::g_Player.onGround = onGround;
+	int Play::player_handler(PacketIn* p) {
+		p->buffer->ReadBool(Internal::Player::g_Player.onGround);
 
 		return 0; 
 	}
 	
 	int Play::player_position_handler(PacketIn* p) { 
-
-		double x, y, z;
-		bool onGround;
-
-		x = decodeDouble(*p);
-		y = decodeDouble(*p);
-		z = decodeDouble(*p);
-		onGround = decodeBool(*p);
-
-		Internal::Player::g_Player.x = x;
-		Internal::Player::g_Player.y = y;
-		Internal::Player::g_Player.z = z;
-		Internal::Player::g_Player.onGround = onGround;
+		p->buffer->ReadBEDouble(Internal::Player::g_Player.x);
+		p->buffer->ReadBEDouble(Internal::Player::g_Player.y);
+		p->buffer->ReadBEDouble(Internal::Player::g_Player.z);
+		p->buffer->ReadBool(Internal::Player::g_Player.onGround);
 
 		return 0; 
 	}
 	
 	int Play::player_position_and_look_handler(PacketIn* p) { 
-		double x, y, z;
-		float yaw, pitch;
-		bool onGround;
 
-		x = decodeDouble(*p);
-		y = decodeDouble(*p);
-		z = decodeDouble(*p);
+		p->buffer->ReadBEDouble(Internal::Player::g_Player.x);
+		p->buffer->ReadBEDouble(Internal::Player::g_Player.y);
+		p->buffer->ReadBEDouble(Internal::Player::g_Player.z);
+		p->buffer->ReadBEFloat(Internal::Player::g_Player.yaw);
+		p->buffer->ReadBEFloat(Internal::Player::g_Player.pitch);
+		p->buffer->ReadBool(Internal::Player::g_Player.onGround);
 
-		yaw = decodeFloat(*p);
-		pitch = decodeFloat(*p);
-
-		onGround = decodeBool(*p);
-
-		Internal::Player::g_Player.x = x;
-		Internal::Player::g_Player.y = y;
-		Internal::Player::g_Player.z = z;
-
-		Internal::Player::g_Player.yaw = yaw;
-		Internal::Player::g_Player.pitch = pitch;
-		Internal::Player::g_Player.onGround = onGround;
 
 		return 0; 
 	}
 	
 	int Play::player_look_handler(PacketIn* p) { 
 
-		float yaw, pitch;
-		bool onGround;
-
-		yaw = decodeFloat(*p);
-		pitch = decodeFloat(*p);
-
-		onGround = decodeBool(*p);
-
-		Internal::Player::g_Player.yaw = yaw;
-		Internal::Player::g_Player.pitch = pitch;
-		Internal::Player::g_Player.onGround = onGround;
+		p->buffer->ReadBEFloat(Internal::Player::g_Player.yaw);
+		p->buffer->ReadBEFloat(Internal::Player::g_Player.pitch);
+		p->buffer->ReadBool(Internal::Player::g_Player.onGround);
 
 		return 0; 
 	}
@@ -338,16 +331,17 @@ namespace Minecraft::Server::Protocol {
 
 void Minecraft::Server::Protocol::Play::PacketsOut::send_join_game(int eid)
 {
-	PacketOut* p = new PacketOut();
+	PacketOut* p = new PacketOut(90);
 
 	p->ID = 0x23;
-	encodeInt(eid, *p);
-	encodeByte(g_Config.gamemode, *p);
-	encodeInt(0, *p); //DIMENSION;
-	encodeByte(g_Config.difficulty, *p);
-	encodeByte(1, *p); //Max players, useless
-	encodeStringLE("default", *p); //Level type
-	encodeBool(false, *p); //Reduce debug info? NONONONONO!
+	p->buffer->WriteBEInt32(eid);
+	p->buffer->WriteBEUInt8(g_Config.gamemode);
+	p->buffer->WriteBEInt32(0); //DIMENSION;
+	p->buffer->WriteBEUInt8(g_Config.difficulty);
+	p->buffer->WriteBEUInt8(1); //Max players, useless
+	std::string lvl = "default";
+	p->buffer->WriteVarUTF8String(lvl); //Level type
+	p->buffer->WriteBool(false); //Reduce debug info? NONONONONO!
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
@@ -356,10 +350,11 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_join_game(int eid)
 void Minecraft::Server::Protocol::Play::PacketsOut::send_plugin_message(std::string type)
 {
 	if (type == "MC|Brand") {
-		PacketOut* p = new PacketOut();
+		PacketOut* p = new PacketOut(512);
 		p->ID = 0x18;
-		encodeStringLE(type, *p);
-		encodeStringLE("PSP-Craft", *p);
+		p->buffer->WriteVarUTF8String(type);
+		std::string serverID = "PSP-Craft";
+		p->buffer->WriteVarUTF8String(serverID);
 
 		g_NetMan->AddPacket(p);
 		g_NetMan->SendPackets();
@@ -368,9 +363,9 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_plugin_message(std::str
 
 void Minecraft::Server::Protocol::Play::PacketsOut::send_server_difficulty()
 {
-	PacketOut* p = new PacketOut();
+	PacketOut* p = new PacketOut(12);
 	p->ID = 0x0D;
-	encodeByte(g_Config.difficulty, *p);
+	p->buffer->WriteBEUInt8(g_Config.difficulty);
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
@@ -378,11 +373,11 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_server_difficulty()
 
 void Minecraft::Server::Protocol::Play::PacketsOut::send_player_abilities()
 {
-	PacketOut* p = new PacketOut();
+	PacketOut* p = new PacketOut(12);
 	p->ID = 0x2C;
-	encodeByte(0, *p);
-	encodeFloat(0.5f, *p);
-	encodeFloat(0.1f, *p);
+	p->buffer->WriteBEUInt8(0);
+	p->buffer->WriteBEFloat(0.5f);
+	p->buffer->WriteBEFloat(0.1f);
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
@@ -390,9 +385,9 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_player_abilities()
 
 void Minecraft::Server::Protocol::Play::PacketsOut::send_hotbar_slot(int slot)
 {
-	PacketOut* p = new PacketOut();
+	PacketOut* p = new PacketOut(12);
 	p->ID = 0x3A;
-	encodeByte(0, *p);
+	p->buffer->WriteBEUInt8(0);
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
@@ -400,10 +395,10 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_hotbar_slot(int slot)
 
 void Minecraft::Server::Protocol::Play::PacketsOut::send_entity_status(int eid, int action)
 {
-	PacketOut* p = new PacketOut();
+	PacketOut* p = new PacketOut(12);
 	p->ID = 0x1B;
-	encodeInt(eid, *p);
-	encodeByte(action, *p);
+	p->buffer->WriteBEInt32(eid);
+	p->buffer->WriteBEUInt8(action);
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
@@ -416,16 +411,16 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_player_list_item()
 void Minecraft::Server::Protocol::Play::PacketsOut::send_player_position_look()
 {
 
-	PacketOut* p = new PacketOut();
+	PacketOut* p = new PacketOut(64);
 	p->ID = 0x2F;
-	encodeDouble(0, *p);
-	encodeDouble(63, *p);
-	encodeDouble(0, *p);
-	encodeFloat(0, *p);
-	encodeFloat(0, *p);
+	p->buffer->WriteBEDouble(0);
+	p->buffer->WriteBEDouble(63);
+	p->buffer->WriteBEDouble(0);
+	p->buffer->WriteBEFloat(0);
+	p->buffer->WriteBEFloat(0);
 
-	encodeByte(0, *p);
-	encodeByte(1, *p);//TP ID
+	p->buffer->WriteBEUInt8(0);
+	p->buffer->WriteBEUInt8(1);//TP ID
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
@@ -433,21 +428,21 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_player_position_look()
 
 void Minecraft::Server::Protocol::Play::PacketsOut::send_world_border()
 {
-	PacketOut* p = new PacketOut();
+	PacketOut* p = new PacketOut(80);
 	p->ID = 0x38;
-	encodeByte(3, *p);
+	p->buffer->WriteBEUInt8(3);
 	//INIT
-	encodeDouble(0, *p);
-	encodeDouble(0, *p);
+	p->buffer->WriteBEDouble(0);
+	p->buffer->WriteBEDouble(0);
 
-	encodeDouble(60000000.0, *p);
-	encodeDouble(60000000.0, *p);
+	p->buffer->WriteBEDouble(60000000.0);
+	p->buffer->WriteBEDouble(60000000.0);
 
-	encodeByte(0, *p);
-	encodeVarInt(29999984, p->bytes);
+	p->buffer->WriteBEUInt8(0);
+	p->buffer->WriteVarInt32(29999984);
 
-	encodeByte(5, *p);
-	encodeByte(15, *p);
+	p->buffer->WriteBEUInt8(5);
+	p->buffer->WriteBEUInt8(15);
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
@@ -455,10 +450,10 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_world_border()
 
 void Minecraft::Server::Protocol::Play::PacketsOut::send_time_update()
 {
-	PacketOut* p = new PacketOut();
+	PacketOut* p = new PacketOut(17);
 	p->ID = 0x47;
-	encodeLong(0, *p);
-	encodeLong(0, *p);
+	p->buffer->WriteBEInt64(0);
+	p->buffer->WriteBEInt64(0);
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
@@ -466,9 +461,9 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_time_update()
 
 void Minecraft::Server::Protocol::Play::PacketsOut::send_spawn_position()
 {
-	PacketOut* p = new PacketOut();
+	PacketOut* p = new PacketOut(10);
 	p->ID = 0x46;
-	encodeLong((((long long)0 & 0x3FFFFFFLL) << 38) | ((0 & 0x3FFFFFF) << 12) | (63 & 0xFFF), *p);
+	p->buffer->WriteBEInt64((((long long)0 & 0x3FFFFFFLL) << 38) | ((0 & 0x3FFFFFF) << 12) | (63 & 0xFFF));
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
@@ -476,9 +471,9 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_spawn_position()
 
 void Minecraft::Server::Protocol::Play::PacketsOut::send_keepalive(long long int ll)
 {
-	PacketOut* p = new PacketOut();
+	PacketOut* p = new PacketOut(9);
 	p->ID = 0x1F;
-	encodeLong(ll, *p);
+	p->buffer->WriteBEInt64(ll);
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
@@ -486,7 +481,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_keepalive(long long int
 
 void Minecraft::Server::Protocol::Play::PacketsOut::send_chat(std::string text, std::string color, std::string format, bool serverChat)
 {
-	PacketOut* p = new PacketOut();
+	PacketOut* p = new PacketOut(1024);
 	p->ID = 0x0F;
 	std::string build;
 	if (serverChat) {
@@ -506,7 +501,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat(std::string text, 
 
 	build += "}]} ";
 	
-	encodeStringNonNull(build, *p);
+	p->buffer->WriteVarUTF8String(build);
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
@@ -757,7 +752,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 		response = "Unrecognized Command!";
 	}
 
-	PacketOut* p = new PacketOut();
+	PacketOut* p = new PacketOut(1024);
 	p->ID = 0x0F;
 	std::string build = "{\"text\":\"" + response + "\"";
 	if (!err) {
@@ -770,7 +765,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 
 	build += "} ";
 
-	encodeStringNonNull(build, *p);
+	p->buffer->WriteVarUTF8String(build);
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
@@ -786,11 +781,11 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_disconnect(std::string 
 {
 
 	//Send a disconnect
-	PacketOut* p2 = new PacketOut();
+	PacketOut* p2 = new PacketOut(80);
 	p2->ID = 0x1A;
 
 	std::string build = "{\"text\":\"" + reason + "\",\"color\":\"" + color + "\"}";
-	encodeString(build, *p2);
+	p2->buffer->WriteVarUTF8String(build);
 	g_NetMan->AddPacket(p2);
 	g_NetMan->SendPackets();
 	g_NetMan->m_Socket->Close();
@@ -800,13 +795,13 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_disconnect(std::string 
 
 void Minecraft::Server::Protocol::Play::PacketsOut::send_change_gamestate(uint8_t code, float value)
 {
-	PacketOut* p2 = new PacketOut();
-	p2->ID = 0x1E;
+	PacketOut* p = new PacketOut(80);
+	p->ID = 0x1E;
 
-	encodeByte(code, *p2);
-	encodeFloat(value, *p2);
+	p->buffer->WriteBEUInt8(code);
+	p->buffer->WriteBEFloat(value);
 
-	g_NetMan->AddPacket(p2);
+	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
 }
 
@@ -818,13 +813,13 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_demo_chunk(int xx, int 
 	chnks->generateTestData();
 	chnkc->addSection(chnks);
 
-	PacketOut* p2 = new PacketOut();
-	p2->ID = 0x20;
+	PacketOut* p = new PacketOut(512 KiB);
+	p->ID = 0x20;
 
-	encodeInt(chnkc->getX(), *p2);
-	encodeInt(chnkc->getZ(), *p2);
+	p->buffer->WriteBEInt32(chnkc->getX());
+	p->buffer->WriteBEInt32(chnkc->getZ());
 
-	encodeBool(true, *p2);
+	p->buffer->WriteBool(true);
 
 	int mask = 0;
 	for (int i = 0; i < 16; i++) {
@@ -833,7 +828,8 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_demo_chunk(int xx, int 
 			mask |= (1 << i);
 		}
 	}
-	encodeVarInt(mask, p2->bytes);
+	
+	p->buffer->WriteVarInt32(mask);
 
 	std::vector<Network::byte> byteBuffer;
 	byteBuffer.clear();
@@ -854,7 +850,14 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_demo_chunk(int xx, int 
 		}
 	}
 
-	encodeVarInt(chunkSecBuffer.size(), byteBuffer);
+	int value = chunkSecBuffer.size();
+	while (value > 127) {
+		byteBuffer.push_back(((byte)(value & 127)) | 128);
+
+		value >>= 7;
+	}
+	byteBuffer.push_back((byte)value & 127);
+
 	for (auto& b : chunkSecBuffer) {
 		byteBuffer.push_back(b);
 	}
@@ -882,14 +885,14 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_demo_chunk(int xx, int 
 	}
 	int dataBufferSize = byteBuffer.size();
 
-	encodeVarInt(dataBufferSize, p2->bytes);
+	p->buffer->WriteVarInt32(dataBufferSize);
 	for (auto& b : byteBuffer) {
-		encodeByte(b, *p2);
+		p->buffer->WriteBEUInt8(b);
 	}
 
-	encodeByte(0, *p2);
+	p->buffer->WriteBEUInt8(0);
 
-	g_NetMan->AddPacket(p2);
+	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
 
 	delete chnkc;

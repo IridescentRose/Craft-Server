@@ -19,7 +19,7 @@ namespace Minecraft::Server {
 		~ServerSocket();
 
 		Network::PacketIn* Recv();
-		void Send(size_t size, Network::byte* buffer);
+		void Send(size_t size, char* buffer);
 		void ListenState();
 
 		void Close();
