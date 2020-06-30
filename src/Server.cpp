@@ -1,8 +1,10 @@
 #include "Server.h"
-#include "Utils.h"
 #include <Network/NetworkDriver.h>
 #include <stdexcept>
-#include "Config.h"
+
+#include "Utilities/Utils.h"
+#include "Utilities/Config.h"
+
 #include "Protocol/1-12-2.h"
 #include "Internal/InternalServer.h"
 
@@ -15,7 +17,7 @@ namespace Minecraft::Server {
 	Server::~Server()
 	{
 	}
-	void Server::run()
+	void Server::init()
 	{
 		parseServerConfig();
 
@@ -32,9 +34,6 @@ namespace Minecraft::Server {
 		pspDebugScreenSetXY(0, 0);
 #endif
 
-		Internal::g_InternalServer = new Internal::InternalServer();
-		Internal::g_InternalServer->start();
-
 		socket = new ServerSocket(g_Config.port);
 		if (socket == nullptr) {
 			throw std::runtime_error("Fatal: ServerSocket is nullptr!");
@@ -45,48 +44,46 @@ namespace Minecraft::Server {
 			throw std::runtime_error("Fatal: Network Manager is nullptr!");
 		}
 
+		Internal::g_InternalServer = new Internal::InternalServer();
+
 		socket->setConnectionStatus(CONNECTION_STATE_HANDSHAKE);
-
-		thr = new Thread(update);
-		thr->Start(0);
 	}
-	int Server::update(unsigned int, void*)
+
+	int count = 0;
+
+	void Server::update()
 	{
-		int count = 0;
-		while (true) {
-
-			if (g_Server->socket->isAlive()) {
-				int pc = 0;
-
-				if (g_NetMan->m_Socket->getConnectionStatus() == CONNECTION_STATE_PLAY) {
-					Internal::g_InternalServer->chunkgenUpdate();
-				}
-
-				while (g_NetMan->ReceivePacket() && pc < 50) {
-					pc++;
-				}
-
-				g_NetMan->HandlePackets();
-
-				//World Updates
-
-				g_NetMan->SendPackets();
+		if (g_Server->socket->isAlive()) {
+			if (!Internal::g_InternalServer->isOpen()) {
+				Internal::g_InternalServer->start();
 			}
-			else {
-				g_Server->socket->ListenState();
-				g_Server->socket->setConnectionStatus(CONNECTION_STATE_HANDSHAKE);
+			int pc = 0;
+
+			if (g_NetMan->m_Socket->getConnectionStatus() == CONNECTION_STATE_PLAY) {
+				Internal::g_InternalServer->chunkgenUpdate();
 			}
+
+			while (g_NetMan->ReceivePacket() && pc < 50) {
+				pc++;
+			}
+
+			g_NetMan->HandlePackets();
+
+			//World Updates
+
+			g_NetMan->SendPackets();
 
 			count++;
 			if (count % 20 == 0) {
 				Protocol::Play::PacketsOut::send_keepalive(0xCAFEBABECAFEBABE);
 			}
-
-
-			sceKernelDelayThread(50 * 1000);
 		}
-
-		return 0;
+		else {
+			g_Server->socket->Close();
+			Internal::g_InternalServer->stop();
+			g_Server->socket->ListenState();
+			g_Server->socket->setConnectionStatus(CONNECTION_STATE_HANDSHAKE);
+		}
 	}
 
 	Server* g_Server = new Server();

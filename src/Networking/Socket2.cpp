@@ -147,6 +147,11 @@ namespace Minecraft::Server {
 		if (res < 0) {
 			utilityPrint("Failed to send a packet!", Utilities::LOGGER_LEVEL_WARN);
 			utilityPrint("Packet Size: " + std::to_string(size), Utilities::LOGGER_LEVEL_WARN);
+
+			utilityPrint("Socket connection closed!", Utilities::LOGGER_LEVEL_WARN);
+			connected = false;
+			close(m_Connection);
+			
 		}
 	}
 	void ServerSocket::ListenState()

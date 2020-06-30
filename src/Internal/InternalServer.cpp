@@ -1,5 +1,5 @@
 #include "InternalServer.h"
-#include "../Utils.h"
+#include "../Utilities/Utils.h"
 #include "../Protocol/1-12-2.h"
 
 namespace Minecraft::Server::Internal {
@@ -7,7 +7,7 @@ namespace Minecraft::Server::Internal {
 	{
 		tickUpdate = NULL;
 		chunkMap.clear();
-
+		bopen = false;
 		lastPos = { -1000, -1000 };
 	}
 	InternalServer::~InternalServer()
@@ -23,11 +23,20 @@ namespace Minecraft::Server::Internal {
 		utilityPrint("Starting Update Thread!", LOGGER_LEVEL_DEBUG);
 		tickUpdate->Start(0);
 		sceKernelDelayThread(50 * 1000);
+		bopen = true;
+
 	}
 	void InternalServer::stop()
 	{
+		bopen = false;
+
 		tickUpdate->Kill();
 		utilityPrint("Stopping Internal Server!", LOGGER_LEVEL_INFO);
+		lastPos = { -100000, -100000 };
+		for (auto& [pos, chunk] : chunkMap) {
+			delete chunk;
+			chunkMap.erase(pos);
+		}
 	}
 	int InternalServer::tickUpdateThread(unsigned int argc, void* argv)
 	{
@@ -37,6 +46,10 @@ namespace Minecraft::Server::Internal {
 			//TICK UPDATE!
 			sceKernelDelayThread(50 * 1000);
 		}
+	}
+
+	bool InternalServer::isOpen() {
+		return bopen;
 	}
 
 	void InternalServer::chunkgenUpdate()

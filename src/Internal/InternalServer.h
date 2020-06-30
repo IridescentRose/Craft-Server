@@ -21,11 +21,14 @@ namespace Minecraft::Server::Internal {
 
 		void chunkgenUpdate();
 
+		bool isOpen();
+
 		glm::ivec2 lastPos;
 		std::map<mc::Vector3i, ChunkColumn*> chunkMap;
 	private:
 		static int tickUpdateThread(unsigned int argc, void* argv);
 		Thread* tickUpdate;
+		bool bopen;
 	};
 
 	extern InternalServer* g_InternalServer;

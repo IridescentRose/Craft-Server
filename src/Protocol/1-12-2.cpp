@@ -1,8 +1,8 @@
 #include "1-12-2.h"
 #include "../Networking/NetworkManager2.h"
-#include "../Utils.h"
+#include "../Utilities/Utils.h"
 #include <Utilities/JSON.h>
-#include "../Config.h"
+#include "../Utilities/Config.h"
 
 #include <Utilities/UUID.h>
 #include "../Internal/InternalServer.h"

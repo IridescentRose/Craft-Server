@@ -1,5 +1,5 @@
 #pragma once
-#include "Utils.h"
+#include "Utilities/Utils.h"
 #include "Networking/Socket2.h"
 #include "Networking/NetworkManager2.h"
 #include <Utilities/Thread.h>
@@ -12,9 +12,9 @@ namespace Minecraft::Server {
 		Server();
 		~Server();
 
-		void run();
+		void init();
 
-		static int update(unsigned int, void*);
+		void update();
 
 		inline bool isRunning() {
 			return m_IsRunning;
@@ -23,7 +23,6 @@ namespace Minecraft::Server {
 	private:
 		ServerSocket* socket;
 		bool m_IsRunning;
-		Thread* thr;
 	};
 
 	extern Server* g_Server;
