@@ -19,7 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Config.cpp" />
+    <ClCompile Include="src\Protocol\Handshake.cpp" />
+    <ClCompile Include="src\Protocol\Login.cpp" />
+    <ClCompile Include="src\Protocol\Status.cpp" />
+    <ClCompile Include="src\Utilities\Config.cpp" />
     <ClCompile Include="src\Internal\Chunks\ChunkColumn.cpp" />
     <ClCompile Include="src\Internal\Chunks\ChunkPalette.cpp" />
     <ClCompile Include="src\Internal\Chunks\ChunkSection.cpp" />
@@ -28,12 +31,15 @@
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Networking\NetworkManager2.cpp" />
     <ClCompile Include="src\Networking\Socket2.cpp" />
-    <ClCompile Include="src\Protocol\1-12-2.cpp" />
+    <ClCompile Include="src\Protocol\Play.cpp" />
     <ClCompile Include="src\Server.cpp" />
-    <ClCompile Include="src\Utils.cpp" />
+    <ClCompile Include="src\Utilities\Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Config.h" />
+    <ClInclude Include="src\Protocol\Handshake.h" />
+    <ClInclude Include="src\Protocol\Login.h" />
+    <ClInclude Include="src\Protocol\Status.h" />
+    <ClInclude Include="src\Utilities\Config.h" />
     <ClInclude Include="src\Internal\Chunks\ChunkColumn.h" />
     <ClInclude Include="src\Internal\Chunks\ChunkDefines.h" />
     <ClInclude Include="src\Internal\Chunks\ChunkPalette.h" />
@@ -42,9 +48,9 @@
     <ClInclude Include="src\Internal\Player\Player.h" />
     <ClInclude Include="src\Networking\NetworkManager2.h" />
     <ClInclude Include="src\Networking\Socket2.h" />
-    <ClInclude Include="src\Protocol\1-12-2.h" />
+    <ClInclude Include="src\Protocol\Play.h" />
     <ClInclude Include="src\Server.h" />
-    <ClInclude Include="src\Utils.h" />
+    <ClInclude Include="src\Utilities\Utils.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
