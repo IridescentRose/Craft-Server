@@ -95,19 +95,21 @@ namespace Minecraft::Server::Protocol {
 
 
 		sceKernelDelayThread(50 * 1000);
-		ChunkColumn* chunk = new ChunkColumn(0, 0);
-		ChunkSection* chks = new ChunkSection(0);
-		chks->generateTestData();
-		chunk->addSection(chks);
+		for (int x = -3; x <= 3; x++) {
+			for (int z = -3; z <= 3; z++) {
+				ChunkColumn* chunk = new ChunkColumn(x, z);
+				ChunkSection* chks = new ChunkSection(0);
+				chks->generateTestData();
+				chunk->addSection(chks);
 
-		sceKernelDelayThread(100 * 1000);
-		Play::PacketsOut::send_chunk(chunk, true);
-		sceKernelDelayThread(100 * 1000);
+				sceKernelDelayThread(100 * 1000);
+				Play::PacketsOut::send_chunk(chunk, true);
+				sceKernelDelayThread(100 * 1000);
 
-		delete chks;
-		delete chunk;
-		
-		
+				delete chks;
+				delete chunk;
+			}
+		}
 
 		Play::PacketsOut::send_player_position_look();
 		Play::PacketsOut::send_world_border();
