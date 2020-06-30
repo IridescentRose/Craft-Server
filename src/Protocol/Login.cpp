@@ -94,7 +94,20 @@ namespace Minecraft::Server::Protocol {
 		Play::PacketsOut::send_player_list_item();
 
 
+		sceKernelDelayThread(50 * 1000);
+		ChunkColumn* chunk = new ChunkColumn(0, 0);
+		ChunkSection* chks = new ChunkSection(0);
+		chks->generateTestData();
+		chunk->addSection(chks);
+
 		sceKernelDelayThread(100 * 1000);
+		Play::PacketsOut::send_chunk(chunk, true);
+		sceKernelDelayThread(100 * 1000);
+
+		delete chks;
+		delete chunk;
+		
+		
 
 		Play::PacketsOut::send_player_position_look();
 		Play::PacketsOut::send_world_border();

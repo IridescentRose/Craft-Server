@@ -103,9 +103,9 @@ namespace Minecraft::Server::Internal {
 					chks->generateTestData();
 					chunk->addSection(chks);
 
-					sceKernelDelayThread(50 * 1000);
+					sceKernelDelayThread(100 * 1000);
 					Protocol::Play::PacketsOut::send_chunk(chunk, true);
-					sceKernelDelayThread(50 * 1000);
+					sceKernelDelayThread(100 * 1000);
 					chunkMap.emplace(chk, std::move(chunk));
 				}
 			}
