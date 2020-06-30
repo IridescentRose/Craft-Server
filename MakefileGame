@@ -4,8 +4,9 @@ src/Server.o \
 src/Networking/Socket2.o \
 src/Networking/NetworkManager2.o \
 src/Utilities/Config.o \
-src/Protocol/1-12-2.o \
 src/Protocol/Handshake.o \
+src/Protocol/Login.o \
+src/Protocol/Play.o \
 src/Protocol/Status.o \
 src/Internal/InternalServer.o \
 src/Internal/Player/Player.o \

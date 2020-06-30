@@ -1,6 +1,6 @@
 #include "InternalServer.h"
 #include "../Utilities/Utils.h"
-#include "../Protocol/1-12-2.h"
+#include "../Protocol/Play.h"
 
 namespace Minecraft::Server::Internal {
 	InternalServer::InternalServer()

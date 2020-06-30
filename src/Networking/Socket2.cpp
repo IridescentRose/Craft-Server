@@ -3,7 +3,8 @@
 #include <fcntl.h>
 #include "NetworkManager2.h"
 #include <netinet/tcp.h>
-#include "../Protocol/1-12-2.h"
+#include "../Protocol/Play.h"
+#include "../Protocol/Login.h"
 #include "../Protocol/Handshake.h"
 #include "../Protocol/Status.h"
 

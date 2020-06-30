@@ -5,7 +5,7 @@
 #include "Utilities/Utils.h"
 #include "Utilities/Config.h"
 
-#include "Protocol/1-12-2.h"
+#include "Protocol/Play.h"
 #include "Internal/InternalServer.h"
 
 namespace Minecraft::Server {

@@ -8,20 +8,6 @@ using namespace Stardust::Events;
 using namespace Stardust::Network;
 
 namespace Minecraft::Server::Protocol {
-	namespace Login {
-		enum LoginPackets {
-			LOGIN_START = 0x00
-		};
-
-		int login_start_packet_handler(PacketIn* p);
-
-		namespace PacketsOut {
-			//TODO: ENCRYPTION!!!
-			//TODO: GZ COMPRESSION!!!
-			void send_login_success(std::string username);
-		}
-	}
-
 	namespace Play {
 		enum PlayPackets {
 			TELEPORT_CONFIRM			= 0x00,
