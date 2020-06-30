@@ -5,6 +5,7 @@
 #include <netinet/tcp.h>
 #include "../Protocol/1-12-2.h"
 #include "../Protocol/Handshake.h"
+#include "../Protocol/Status.h"
 
 
 namespace Minecraft::Server {
