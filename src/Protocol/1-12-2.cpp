@@ -10,32 +10,6 @@
 
 namespace Minecraft::Server::Protocol {
 
-	int Handshake::handshake_packet_handler(PacketIn* p)
-	{
-
-		uint32_t getVersion;
-		p->buffer->ReadVarInt32(getVersion);
-		
-		std::string ip;
-		p->buffer->ReadVarUTF8String(ip);
-
-		uint16_t port;
-		p->buffer->ReadBEUInt16(port);
-
-		uint8_t state;
-		p->buffer->ReadBEUInt8(state);
-		
-		g_NetMan->m_Socket->setConnectionStatus(state);
-
-
-		utilityPrint(std::to_string(getVersion), LOGGER_LEVEL_DEBUG);
-		utilityPrint(ip, LOGGER_LEVEL_DEBUG);
-		utilityPrint(std::to_string(port), LOGGER_LEVEL_DEBUG);
-		utilityPrint(std::to_string((int)state), LOGGER_LEVEL_DEBUG);
-
-		return 0;
-	}
-
 	int Status::request_packet_handler(PacketIn* p)
 	{
 		PacketsOut::send_response();

@@ -4,6 +4,9 @@
 #include "NetworkManager2.h"
 #include <netinet/tcp.h>
 #include "../Protocol/1-12-2.h"
+#include "../Protocol/Handshake.h"
+
+
 namespace Minecraft::Server {
 	ServerSocket::ServerSocket(uint16_t port)
 	{

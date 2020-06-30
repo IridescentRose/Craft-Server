@@ -8,19 +8,6 @@ using namespace Stardust::Events;
 using namespace Stardust::Network;
 
 namespace Minecraft::Server::Protocol {
-	namespace Handshake {
-
-		enum HandShakePackets {
-			HANDSHAKE = 0x00
-		};
-
-		int handshake_packet_handler(PacketIn* p);
-
-		namespace PacketsOut {
-			//There are none for Handshakes
-		}
-	}
-
 	namespace Status {
 		enum StatusPackets {
 			REQUEST	= 0x00,
