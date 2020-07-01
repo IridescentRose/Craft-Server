@@ -22,7 +22,11 @@ namespace Minecraft::Server::Internal {
 
 		utilityPrint("Starting Update Thread!", LOGGER_LEVEL_DEBUG);
 		tickUpdate->Start(0);
+#if CURRENT_PLATFORM == PLATFORM_PSP
 		sceKernelDelayThread(50 * 1000);
+#else
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+#endif
 		bopen = true;
 
 	}
@@ -44,7 +48,11 @@ namespace Minecraft::Server::Internal {
 			//Event update first then
 			
 			//TICK UPDATE!
+#if CURRENT_PLATFORM == PLATFORM_PSP
 			sceKernelDelayThread(50 * 1000);
+#else
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
+#endif
 		}
 	}
 
@@ -95,17 +103,31 @@ namespace Minecraft::Server::Internal {
 			}
 
 			//Make new
+#if CURRENT_PLATFORM == PLATFORM_PSP
 			sceKernelDelayThread(50 * 1000);
+#else
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
+#endif
 			for (auto chk : needed) {
 				if (chunkMap.find(chk) == chunkMap.end()) {
 					ChunkColumn* chunk = new ChunkColumn(chk.x, chk.y);
-					ChunkSection* chks = new ChunkSection(0);
-					chks->generateTestData();
-					chunk->addSection(chks);
+					for (int i = 0; i < 5; i++) {
+						ChunkSection* chks = new ChunkSection(i);
+						chks->generateTestData();
+						chunk->addSection(chks);
+					}
 
+#if CURRENT_PLATFORM == PLATFORM_PSP
 					sceKernelDelayThread(100 * 1000);
+#else
+					//std::this_thread::sleep_for(std::chrono::milliseconds(100));
+#endif
 					Protocol::Play::PacketsOut::send_chunk(chunk, true);
+#if CURRENT_PLATFORM == PLATFORM_PSP
 					sceKernelDelayThread(100 * 1000);
+#else
+					//std::this_thread::sleep_for(std::chrono::milliseconds(100));
+#endif
 					chunkMap.emplace(chk, std::move(chunk));
 				}
 			}

@@ -1,8 +1,19 @@
 #include "Socket2.h"
+#if CURRENT_PLATFORM == PLATFORM_PSP
 #include <sys/socket.h>
 #include <fcntl.h>
-#include "NetworkManager2.h"
 #include <netinet/tcp.h>
+#else
+
+#define WIN32_LEAN_AND_MEAN 1
+#include <winsock2.h>
+#include <windows.h>
+#include <thread>
+#include <Ws2tcpip.h>
+
+#endif
+
+#include "NetworkManager2.h"
 #include "../Protocol/Play.h"
 #include "../Protocol/Login.h"
 #include "../Protocol/Handshake.h"
@@ -47,15 +58,24 @@ namespace Minecraft::Server {
 			throw std::runtime_error("Fatal: Could not accept connection. Errno: " + std::to_string(errno));
 		}
 
+#if CURRENT_PLATFORM == PLATFORM_PSP
 		int yes = 1;
 		if (setsockopt(m_Connection, IPPROTO_TCP, TCP_NODELAY, &yes, sizeof(yes)) == -1) {
 			throw std::runtime_error("Fatal: Could not set no delay! Errno " + std::to_string(errno));
 		}
+#endif
 
+		utilityPrint("New Connection from " + std::string(inet_ntoa(sockaddr.sin_addr)) + " on port " + std::to_string(ntohs(sockaddr.sin_port)), LOGGER_LEVEL_INFO );
 
-		utilityPrint("New Connection from " + std::to_string(inet_ntoa(sockaddr.sin_addr)) + " on port " + std::to_string(ntohs(sockaddr.sin_port)), LOGGER_LEVEL_INFO );
-
+#if CURRENT_PLATFORM == PLATFORM_PSP
 		fcntl(m_Connection, F_SETFL, O_NONBLOCK);
+#else
+		unsigned long iMode = 1;
+		int iResult = ioctlsocket(m_Connection, FIONBIO, &iMode);
+		if (iResult != NO_ERROR) {
+			throw std::runtime_error("ERROR SETTING NONBLOCKING");
+		}
+#endif
 
 		connected = true;
 
@@ -63,8 +83,17 @@ namespace Minecraft::Server {
 
 	ServerSocket::~ServerSocket()
 	{
+#if CURRENT_PLATFORM == PLATFORM_PSP
 		close(m_Connection);
+#else
+		closesocket(m_Connection);
+#endif
+
+#if CURRENT_PLATFORM == PLATFORM_PSP
 		close(m_Socketfd);
+#else
+		closesocket(m_Socketfd);
+#endif
 	}
 
 	Network::PacketIn* ServerSocket::Recv()
@@ -74,14 +103,18 @@ namespace Minecraft::Server {
 		int res = recv(m_Connection, &newByte, 1, MSG_PEEK);
 
 		if (res > 0) {
-			unsigned char data[5] = { 0 };
+			char data[5] = { 0 };
 			size_t dataLen = 0;
 			do {
 				size_t totalReceived = 0;
 				while (1 > totalReceived) {
 					size_t received = recv(m_Connection, &data[dataLen] + totalReceived, 1 - totalReceived, 0);
 					if (received <= 0) {
-						sceKernelDelayThread(300);
+#if CURRENT_PLATFORM == PLATFORM_PSP
+						sceKernelDelayThread(300 * 1000);
+#else
+						std::this_thread::sleep_for(std::chrono::milliseconds(300));
+#endif
 					}
 					else {
 						totalReceived += received;
@@ -118,7 +151,11 @@ namespace Minecraft::Server {
 					totalTaken += res;
 				}
 				else {
-					sceKernelDelayThread(300);
+#if CURRENT_PLATFORM == PLATFORM_PSP
+					sceKernelDelayThread(300 * 1000);
+#else
+					std::this_thread::sleep_for(std::chrono::milliseconds(300));
+#endif
 				}
 			}
 
@@ -155,13 +192,20 @@ namespace Minecraft::Server {
 
 			utilityPrint("Socket connection closed!", Utilities::LOGGER_LEVEL_WARN);
 			connected = false;
+#if CURRENT_PLATFORM == PLATFORM_PSP
 			close(m_Connection);
-			
+#else
+			closesocket(m_Connection);
+#endif
 		}
 	}
 	void ServerSocket::ListenState()
 	{
+#if CURRENT_PLATFORM == PLATFORM_PSP
 		close(m_Connection);
+#else
+		closesocket(m_Connection);
+#endif
 		setConnectionStatus(CONNECTION_STATE_HANDSHAKE);
 
 		sockaddr_in sockaddr;
@@ -182,20 +226,34 @@ namespace Minecraft::Server {
 			throw std::runtime_error("Fatal: Could not accept connection. Errno: " + std::to_string(errno));
 		}
 
-		utilityPrint("New Connection from " + std::to_string(inet_ntoa(sockaddr.sin_addr)) + " on port " + std::to_string(ntohs(sockaddr.sin_port)), LOGGER_LEVEL_INFO);
+		utilityPrint("New Connection from " + std::string((inet_ntoa(sockaddr.sin_addr))) + " on port " + std::to_string(ntohs(sockaddr.sin_port)), LOGGER_LEVEL_INFO);
+		
+
+#if CURRENT_PLATFORM == PLATFORM_PSP
 		fcntl(m_Connection, F_SETFL, O_NONBLOCK);
+#else
+		unsigned long iMode = 1;
+		int iResult = ioctlsocket(m_Connection, FIONBIO, &iMode);
+		if (iResult != NO_ERROR) {
+			throw std::runtime_error("ERROR SETTING NONBLOCKING");
+		}
+#endif
 		connected = true;
 
 	}
 	void ServerSocket::Close()
 	{
-		connected = false;
-		close(m_Connection);
+		connected = false; 
+#if CURRENT_PLATFORM == PLATFORM_PSP
+			close(m_Connection);
+#else
+		closesocket(m_Connection);
+#endif
 	}
 	bool ServerSocket::isAlive()
 	{
 		char buffer[32] = { 0 };
-		int res = recv(m_Connection, buffer, sizeof(buffer), MSG_PEEK | MSG_DONTWAIT);
+		int res = recv(m_Connection, buffer, sizeof(buffer), MSG_PEEK);
 
 		if (res == 0) {
 			utilityPrint("Socket connection closed!", Utilities::LOGGER_LEVEL_WARN);

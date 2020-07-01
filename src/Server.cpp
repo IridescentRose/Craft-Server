@@ -29,9 +29,11 @@ namespace Minecraft::Server {
 		}
 
 #ifdef CRAFT_SERVER_DEBUG
+#if CURRENT_PLATFORM == PLATFORM_PSP
 		pspDebugScreenInit();
 		pspDebugScreenClear();
 		pspDebugScreenSetXY(0, 0);
+#endif
 #endif
 
 		socket = new ServerSocket(g_Config.port);
@@ -54,14 +56,17 @@ namespace Minecraft::Server {
 	void Server::update()
 	{
 		if (g_Server->socket->isAlive()) {
-			if (!Internal::g_InternalServer->isOpen()) {
-				Internal::g_InternalServer->start();
+
+			if (g_NetMan->m_Socket->getConnectionStatus() == CONNECTION_STATE_PLAY) {
+				if (!Internal::g_InternalServer->isOpen()) {
+					Internal::g_InternalServer->start();
+				}
 			}
 			int pc = 0;
 
-			//if (g_NetMan->m_Socket->getConnectionStatus() == CONNECTION_STATE_PLAY) {
-			//	Internal::g_InternalServer->chunkgenUpdate();
-			//}
+			if (g_NetMan->m_Socket->getConnectionStatus() == CONNECTION_STATE_PLAY) {
+				Internal::g_InternalServer->chunkgenUpdate();
+			}
 
 			while (g_NetMan->ReceivePacket() && pc < 50) {
 				pc++;

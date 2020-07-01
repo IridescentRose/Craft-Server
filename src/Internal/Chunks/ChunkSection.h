@@ -19,7 +19,7 @@ namespace Minecraft::Server::Internal::Chunks {
 			return cY;
 		}
 
-		BlockID blocks[4096];
+		BlockID *blocks;
 	private:
 		bool empty;
 		int cY;
