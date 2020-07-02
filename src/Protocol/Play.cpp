@@ -899,7 +899,10 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chunk(Internal::Chunks:
 	p->buffer->WriteBEUInt8(0);
 	
 	g_NetMan->AddPacket(p);
+	g_NetMan->m_Socket->SetBlocking(true);
 	g_NetMan->SendPackets();
+	g_NetMan->m_Socket->SetBlocking(false);
+
 }
 
 void Minecraft::Server::Protocol::Play::PacketsOut::send_test_update(int x, int z)

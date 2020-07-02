@@ -66,16 +66,7 @@ namespace Minecraft::Server {
 #endif
 
 		utilityPrint("New Connection from " + std::string(inet_ntoa(sockaddr.sin_addr)) + " on port " + std::to_string(ntohs(sockaddr.sin_port)), LOGGER_LEVEL_INFO );
-
-#if CURRENT_PLATFORM == PLATFORM_PSP
-		fcntl(m_Connection, F_SETFL, O_NONBLOCK);
-#else
-		unsigned long iMode = 1;
-		int iResult = ioctlsocket(m_Connection, FIONBIO, &iMode);
-		if (iResult != NO_ERROR) {
-			throw std::runtime_error("ERROR SETTING NONBLOCKING");
-		}
-#endif
+		SetBlocking(false);
 
 		connected = true;
 
@@ -188,12 +179,13 @@ namespace Minecraft::Server {
 		int res = send(m_Connection, buffer, size, 0);
 		if (res < 0) {
 			utilityPrint("Failed to send a packet!", Utilities::LOGGER_LEVEL_WARN);
+			utilityPrint("PACKET ERROR (errno): " + std::to_string((int)errno), Utilities::LOGGER_LEVEL_WARN);
 			utilityPrint("Packet Size: " + std::to_string(size), Utilities::LOGGER_LEVEL_WARN);
 
 			utilityPrint("Socket connection closed!", Utilities::LOGGER_LEVEL_WARN);
 			connected = false;
 #if CURRENT_PLATFORM == PLATFORM_PSP
-			close(m_Connection);
+			//close(m_Connection);
 #else
 			closesocket(m_Connection);
 #endif
@@ -202,7 +194,7 @@ namespace Minecraft::Server {
 	void ServerSocket::ListenState()
 	{
 #if CURRENT_PLATFORM == PLATFORM_PSP
-		close(m_Connection);
+		//close(m_Connection);
 #else
 		closesocket(m_Connection);
 #endif
@@ -227,10 +219,21 @@ namespace Minecraft::Server {
 		}
 
 		utilityPrint("New Connection from " + std::string((inet_ntoa(sockaddr.sin_addr))) + " on port " + std::to_string(ntohs(sockaddr.sin_port)), LOGGER_LEVEL_INFO);
-		
+		SetBlocking(false);
+		connected = true;
 
+	}
+	void ServerSocket::SetBlocking(bool val)
+	{
 #if CURRENT_PLATFORM == PLATFORM_PSP
-		fcntl(m_Connection, F_SETFL, O_NONBLOCK);
+		if (val) {
+			int flags = fcntl(m_Connection, F_GETFL, 0);
+			flags &= ~O_NONBLOCK;
+			fcntl(m_Connection, F_SETFL, flags);
+		}
+		else {
+			fcntl(m_Connection, F_SETFL, O_NONBLOCK);
+		}
 #else
 		unsigned long iMode = 1;
 		int iResult = ioctlsocket(m_Connection, FIONBIO, &iMode);
@@ -238,9 +241,8 @@ namespace Minecraft::Server {
 			throw std::runtime_error("ERROR SETTING NONBLOCKING");
 		}
 #endif
-		connected = true;
-
 	}
+
 	void ServerSocket::Close()
 	{
 		connected = false; 
@@ -256,7 +258,12 @@ namespace Minecraft::Server {
 		int res = recv(m_Connection, buffer, sizeof(buffer), MSG_PEEK);
 
 		if (res == 0) {
-			utilityPrint("Socket connection closed!", Utilities::LOGGER_LEVEL_WARN);
+			utilityPrint("Socket connection closed!", Utilities::LOGGER_LEVEL_WARN); 
+#if CURRENT_PLATFORM == PLATFORM_PSP
+				close(m_Connection);
+#else
+			closesocket(m_Connection);
+#endif
 			connected = false;
 		}
 

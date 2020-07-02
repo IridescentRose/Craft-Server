@@ -22,6 +22,8 @@ namespace Minecraft::Server {
 		void Send(size_t size, char* buffer);
 		void ListenState();
 
+		void SetBlocking(bool val);
+
 		void Close();
 
 		bool isAlive();
