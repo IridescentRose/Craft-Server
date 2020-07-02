@@ -106,9 +106,12 @@ namespace Minecraft::Server::Internal {
 			for (auto chk : needed) {
 				if (chunkMap.find(chk) == chunkMap.end()) {
 					ChunkColumn* chunk = new ChunkColumn(chk.x, chk.y);
-					ChunkSection* chks = new ChunkSection(0);
-					chks->generateTestData();
-					chunk->addSection(chks);
+
+					for (int i = 0; i < 5; i++){
+						ChunkSection* chks = new ChunkSection(i);
+						chks->generateTestData();
+						chunk->addSection(chks);
+					}
 					
 					Protocol::Play::PacketsOut::send_chunk(chunk, true);
 
