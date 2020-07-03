@@ -50,19 +50,6 @@ namespace Minecraft::Server {
 #if CURRENT_PLATFORM == PLATFORM_PSP
 			sceKernelDcacheWritebackInvalidateAll();
 #endif
-			if (packetQueue.front()->ID == 0x20) {
-				//DUMP!
-				std::ofstream file("chunk_dump.txt", std::fstream::in | std::fstream::out | std::fstream::app);
-
-				for (int i = 0; i < bbuf->GetUsedSpace(); i++) {
-					file << (int)bbuf->m_Buffer[i] << " ";
-					if (i % 20 == 1) {
-						file << std::endl;
-					}
-				}
-
-				file.close();
-			}
 			m_Socket->Send(bbuf->GetUsedSpace(), bbuf->m_Buffer);
 
 

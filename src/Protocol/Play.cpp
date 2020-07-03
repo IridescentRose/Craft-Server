@@ -329,9 +329,10 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat(std::string text, 
 		build += ",\"" + format + "\":\"true\"";
 	}
 
-	build += "}]} ";
+	build += "}]}";
 	
 	p->buffer->WriteVarUTF8String(build);
+	p->buffer->WriteBEUInt8(0);
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
@@ -642,9 +643,10 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 	}
 
 
-	build += "} ";
+	build += "}";
 
 	p->buffer->WriteVarUTF8String(build);
+	p->buffer->WriteBEUInt8(0);
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
