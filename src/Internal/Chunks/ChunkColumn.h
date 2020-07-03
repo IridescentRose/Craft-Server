@@ -10,6 +10,7 @@ namespace Minecraft::Server::Internal::Chunks {
 
 		ChunkSection* getSection(uint8_t y);
 		void addSection(ChunkSection* chnks);
+		void clearSections();
 		
 		inline int getX() {
 			return cX;

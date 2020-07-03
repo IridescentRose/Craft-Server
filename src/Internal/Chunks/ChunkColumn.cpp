@@ -16,6 +16,9 @@ namespace Minecraft::Server::Internal::Chunks {
 
 	ChunkColumn::~ChunkColumn()
 	{
+		for (auto chnk : sections) {
+			delete chnk;
+		}
 	}
 
 	ChunkSection* ChunkColumn::getSection(uint8_t y)
@@ -31,6 +34,11 @@ namespace Minecraft::Server::Internal::Chunks {
 	void ChunkColumn::addSection(ChunkSection* chnks)
 	{
 		sections.push_back(chnks);
+	}
+
+	void ChunkColumn::clearSections()
+	{
+		sections.clear();
 	}
 
 }

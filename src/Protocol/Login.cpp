@@ -10,7 +10,13 @@
 
 #include <Utilities/UUID.h>
 #include "../Internal/InternalServer.h"
+#if CURRENT_PLATFORM == PLATFORM_PSP
 #include <dirent.h>
+#elif CURRENT_PLATFORM == PLATFORM_WIN
+#include <filesystem>
+#else
+#include <experimental/filesystem>
+#endif
 
 namespace Minecraft::Server::Protocol {
 
@@ -31,7 +37,7 @@ namespace Minecraft::Server::Protocol {
 		//BEGIN LOGIN SEQUENCE HERE!
 
 
-
+#if CURRENT_PLATFORM == PLATFORM_PSP
 		//Check if they're new.
 		DIR* dir;
 		struct dirent* ent;
@@ -44,7 +50,6 @@ namespace Minecraft::Server::Protocol {
 				}
 			}
 			closedir(dir);
-
 
 			if (found) {
 				utilityPrint("Found Player Profile", LOGGER_LEVEL_TRACE);
@@ -67,7 +72,31 @@ namespace Minecraft::Server::Protocol {
 			}
 
 		}
+#else
+#if CURRENT_PLATFORM == PLATFORM_WIN
+		if (std::filesystem::exists("./playerdata/" + Internal::Player::g_Player.username + ".json")) {
+#else
+		if (std::experimental::filesystem::exists("./playerdata/" + Internal::Player::g_Player.username + ".json")) {
+#endif
+			utilityPrint("Found Player Profile", LOGGER_LEVEL_TRACE);
+			//Load a JSON for their stats.
+			playerJSON = Utilities::JSON::openJSON("./playerdata/" + std::string(Internal::Player::g_Player.username + ".json"));
+			Internal::Player::g_Player.uuid = playerJSON["uuid"].asString();
+			Internal::Player::g_Player.operatorLevel = playerJSON["oplevel"].asInt();
+		}
+		else {
+			utilityPrint("Player profile not found. Generating new.", LOGGER_LEVEL_TRACE);
+			//Create a default one.
+			Internal::Player::g_Player.uuid = generateUUID();
+			Internal::Player::g_Player.operatorLevel = 0;
+			playerJSON["uuid"] = Internal::Player::g_Player.uuid;
+			playerJSON["oplevel"] = (int)Internal::Player::g_Player.operatorLevel;
 
+			std::ofstream fs("./playerdata/" + Internal::Player::g_Player.username + ".json");
+			fs << playerJSON;
+			fs.close();
+		}
+#endif
 
 		PacketsOut::send_login_success(Internal::Player::g_Player.username);
 		g_NetMan->m_Socket->setConnectionStatus(CONNECTION_STATE_PLAY);
@@ -93,23 +122,11 @@ namespace Minecraft::Server::Protocol {
 		Play::PacketsOut::send_entity_status(eid, 24 + Internal::Player::g_Player.operatorLevel);
 		Play::PacketsOut::send_player_list_item();
 
-
+#if CURRENT_PLATFORM == PLATFORM_PSP
 		sceKernelDelayThread(50 * 1000);
-		for (int x = -3; x <= 3; x++) {
-			for (int z = -3; z <= 3; z++) {
-				ChunkColumn* chunk = new ChunkColumn(x, z);
-				ChunkSection* chks = new ChunkSection(0);
-				chks->generateTestData();
-				chunk->addSection(chks);
-
-				sceKernelDelayThread(100 * 1000);
-				Play::PacketsOut::send_chunk(chunk, true);
-				sceKernelDelayThread(100 * 1000);
-
-				delete chks;
-				delete chunk;
-			}
-		}
+#else
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+#endif
 
 		Play::PacketsOut::send_player_position_look();
 		Play::PacketsOut::send_world_border();

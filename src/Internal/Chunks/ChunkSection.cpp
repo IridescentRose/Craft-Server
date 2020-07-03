@@ -1,24 +1,17 @@
 #include "ChunkSection.h"
-
+#include <malloc.h>
 namespace Minecraft::Server::Internal::Chunks {
 	ChunkSection::ChunkSection(int y)
 	{
 		empty = true;
 		cY = y;
 
-		for (int x = 0; x < CHUNK_SECTION_LENGTH; x++) {
-			for (int y = 0; y < CHUNK_SECTION_LENGTH; y++) {
-				for (int z = 0; z < CHUNK_SECTION_LENGTH; z++) {
-					int idx = (((y * CHUNK_SECTION_LENGTH) + z) * CHUNK_SECTION_LENGTH) + x;
-					blocks[idx] = 0;
-				}
-			}
-		}
+		blocks = (BlockID*)malloc(8192);
 	}
 
 	ChunkSection::~ChunkSection()
 	{
-
+		free(blocks);
 	}
 
 	bool ChunkSection::isEmpty()

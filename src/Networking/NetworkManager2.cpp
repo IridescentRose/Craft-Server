@@ -47,7 +47,9 @@ namespace Minecraft::Server {
 
 			Utilities::detail::core_Logger->log("Sending packet with ID: " + std::to_string(packetQueue.front()->ID), Utilities::LOGGER_LEVEL_DEBUG);
 			//Send over socket
+#if CURRENT_PLATFORM == PLATFORM_PSP
 			sceKernelDcacheWritebackInvalidateAll();
+#endif
 			m_Socket->Send(bbuf->GetUsedSpace(), bbuf->m_Buffer);
 
 

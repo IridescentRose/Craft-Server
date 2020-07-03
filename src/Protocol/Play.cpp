@@ -6,7 +6,13 @@
 #include "Login.h"
 #include <Utilities/UUID.h>
 #include "../Internal/InternalServer.h"
+#if CURRENT_PLATFORM == PLATFORM_PSP
 #include <dirent.h>
+#elif CURRENT_PLATFORM == PLATFORM_WIN
+#include <filesystem>
+#else
+#include <experimental/filesystem>
+#endif
 
 namespace Minecraft::Server::Protocol {
 	using namespace Stardust::Utilities;
@@ -241,7 +247,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_player_position_look()
 	PacketOut* p = new PacketOut(64);
 	p->ID = 0x2F;
 	p->buffer->WriteBEDouble(0);
-	p->buffer->WriteBEDouble(16);
+	p->buffer->WriteBEDouble(96);
 	p->buffer->WriteBEDouble(0);
 	p->buffer->WriteBEFloat(0);
 	p->buffer->WriteBEFloat(0);
@@ -326,9 +332,10 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat(std::string text, 
 		build += ",\"" + format + "\":\"true\"";
 	}
 
-	build += "}]} ";
+	build += "}]}";
 	
 	p->buffer->WriteVarUTF8String(build);
+	p->buffer->WriteBEUInt8(0);
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
@@ -371,6 +378,32 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 		else {
 			std::string opUser = text.substr(4, text.length());
 
+#if CURRENT_PLATFORM != PLATFORM_PSP
+			Json::Value pj;
+			#if CURRENT_PLATFORM == PLATFORM_WIN
+			if (std::filesystem::exists("./playerdata/" + opUser + ".json")) {
+			#else
+			if (std::experimental::filesystem::exists("./playerdata/" + opUser + ".json")) {
+			#endif
+				//Load a JSON for their stats.
+				pj = Utilities::JSON::openJSON("./playerdata/" + opUser + ".json");
+				pj["oplevel"] = 3;
+
+				std::ofstream fs("./playerdata/" + opUser + ".json");
+				fs << pj;
+				fs.close();
+			}
+			else {
+				//Create a default one.
+				pj["uuid"] = generateUUID();
+				pj["oplevel"] = 3;
+
+				std::ofstream fs("./playerdata/" + opUser + ".json");
+				fs << pj;
+				fs.close();
+			}
+			response = "Player " + opUser + " has been oped.";
+#else
 			//Check if they're new.
 			DIR* dir;
 			struct dirent* ent;
@@ -406,6 +439,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 				}
 				response = "Player " + opUser + " has been oped.";
 			}
+#endif
 
 		}
 	}
@@ -416,6 +450,32 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 		else {
 			std::string opUser = text.substr(6, text.length());
 
+#if CURRENT_PLATFORM != PLATFORM_PSP
+			Json::Value pj;
+			#if CURRENT_PLATFORM == PLATFORM_WIN
+			if (std::filesystem::exists("./playerdata/" + opUser + ".json")) {
+			#else
+			if (std::experimental::filesystem::exists("./playerdata/" + opUser + ".json")) {
+			#endif
+				//Load a JSON for their stats.
+				pj = Utilities::JSON::openJSON("./playerdata/" + opUser + ".json");
+				pj["oplevel"] = 3;
+
+				std::ofstream fs("./playerdata/" + opUser + ".json");
+				fs << pj;
+				fs.close();
+			}
+			else {
+				//Create a default one.
+				pj["uuid"] = generateUUID();
+				pj["oplevel"] = 3;
+
+				std::ofstream fs("./playerdata/" + opUser + ".json");
+				fs << pj;
+				fs.close();
+			}
+			response = "Player " + opUser + " has been oped.";
+#else
 			//Check if they're new.
 			DIR* dir;
 			struct dirent* ent;
@@ -452,7 +512,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 				}
 				response = "Player " + opUser + " has been deoped.";
 			}
-
+#endif
 		}
 	}
 	else if (text.substr(0, 4) == "/ban") {
@@ -572,7 +632,11 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 			response = "Banned " + Internal::Player::g_Player.username;
 			PacketsOut::send_disconnect("You were banned!", "dark_red");
 			Internal::g_InternalServer->stop();
+#if CURRENT_PLATFORM == PLATFORM_PSP
 			sceKernelExitGame();
+#else
+			exit(0);
+#endif
 		}
 	}
 	else {
@@ -590,17 +654,22 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 	}
 
 
-	build += "} ";
+	build += "}";
 
 	p->buffer->WriteVarUTF8String(build);
+	p->buffer->WriteBEUInt8(0);
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
 
 	if (text == "/stop" && Internal::Player::g_Player.operatorLevel == 4) {
 		PacketsOut::send_disconnect("Server is stopping.");
-		Internal::g_InternalServer->stop();
+		Internal::g_InternalServer->stop(); 
+#if CURRENT_PLATFORM == PLATFORM_PSP
 		sceKernelExitGame();
+#else
+		exit(0);
+#endif
 	}
 }
 
@@ -843,7 +912,10 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chunk(Internal::Chunks:
 	p->buffer->WriteBEUInt8(0);
 	
 	g_NetMan->AddPacket(p);
+	g_NetMan->m_Socket->SetBlocking(true);
 	g_NetMan->SendPackets();
+	g_NetMan->m_Socket->SetBlocking(false);
+
 }
 
 void Minecraft::Server::Protocol::Play::PacketsOut::send_test_update(int x, int z)

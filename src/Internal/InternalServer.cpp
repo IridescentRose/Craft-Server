@@ -18,11 +18,15 @@ namespace Minecraft::Server::Internal {
 	{
 		utilityPrint("Starting Internal Server!", LOGGER_LEVEL_INFO);
 
-		tickUpdate = new Thread(tickUpdateThread);
+		//tickUpdate = new Thread(tickUpdateThread);
 
 		utilityPrint("Starting Update Thread!", LOGGER_LEVEL_DEBUG);
-		tickUpdate->Start(0);
+		//tickUpdate->Start(0);
+#if CURRENT_PLATFORM == PLATFORM_PSP
 		sceKernelDelayThread(50 * 1000);
+#else
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+#endif
 		bopen = true;
 
 	}
@@ -30,13 +34,8 @@ namespace Minecraft::Server::Internal {
 	{
 		bopen = false;
 
-		tickUpdate->Kill();
+		//tickUpdate->Kill();
 		utilityPrint("Stopping Internal Server!", LOGGER_LEVEL_INFO);
-		lastPos = { -100000, -100000 };
-		for (auto& [pos, chunk] : chunkMap) {
-			delete chunk;
-			chunkMap.erase(pos);
-		}
 	}
 	int InternalServer::tickUpdateThread(unsigned int argc, void* argv)
 	{
@@ -44,7 +43,11 @@ namespace Minecraft::Server::Internal {
 			//Event update first then
 			
 			//TICK UPDATE!
+#if CURRENT_PLATFORM == PLATFORM_PSP
 			sceKernelDelayThread(50 * 1000);
+#else
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
+#endif
 		}
 	}
 
@@ -95,17 +98,18 @@ namespace Minecraft::Server::Internal {
 			}
 
 			//Make new
-			sceKernelDelayThread(50 * 1000);
 			for (auto chk : needed) {
 				if (chunkMap.find(chk) == chunkMap.end()) {
 					ChunkColumn* chunk = new ChunkColumn(chk.x, chk.y);
-					ChunkSection* chks = new ChunkSection(0);
-					chks->generateTestData();
-					chunk->addSection(chks);
 
-					sceKernelDelayThread(100 * 1000);
+					for (int i = 0; i < 5; i++){
+						ChunkSection* chks = new ChunkSection(i);
+						chks->generateTestData();
+						chunk->addSection(chks);
+					}
+					
 					Protocol::Play::PacketsOut::send_chunk(chunk, true);
-					sceKernelDelayThread(100 * 1000);
+
 					chunkMap.emplace(chk, std::move(chunk));
 				}
 			}
