@@ -18,7 +18,7 @@ namespace Minecraft::Server::Internal {
 	{
 		utilityPrint("Starting Internal Server!", LOGGER_LEVEL_INFO);
 
-		tickUpdate = new Thread(tickUpdateThread);
+		//tickUpdate = new Thread(tickUpdateThread);
 
 		utilityPrint("Starting Update Thread!", LOGGER_LEVEL_DEBUG);
 		//tickUpdate->Start(0);
@@ -36,11 +36,6 @@ namespace Minecraft::Server::Internal {
 
 		//tickUpdate->Kill();
 		utilityPrint("Stopping Internal Server!", LOGGER_LEVEL_INFO);
-		lastPos = { -100000, -100000 };
-		for (auto& [pos, chunk] : chunkMap) {
-			delete chunk;
-			chunkMap.erase(pos);
-		}
 	}
 	int InternalServer::tickUpdateThread(unsigned int argc, void* argv)
 	{

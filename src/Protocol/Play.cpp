@@ -8,9 +8,12 @@
 #include "../Internal/InternalServer.h"
 #if CURRENT_PLATFORM == PLATFORM_PSP
 #include <dirent.h>
-#else
+#elif CURRENT_PLATFORM == PLATFORM_WIN
 #include <filesystem>
+#else
+#include <experimental/filesystem>
 #endif
+
 namespace Minecraft::Server::Protocol {
 	using namespace Stardust::Utilities;
 
@@ -377,7 +380,11 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 
 #if CURRENT_PLATFORM != PLATFORM_PSP
 			Json::Value pj;
+			#if CURRENT_PLATFORM == PLATFORM_WIN
 			if (std::filesystem::exists("./playerdata/" + opUser + ".json")) {
+			#else
+			if (std::experimental::filesystem::exists("./playerdata/" + opUser + ".json")) {
+			#endif
 				//Load a JSON for their stats.
 				pj = Utilities::JSON::openJSON("./playerdata/" + opUser + ".json");
 				pj["oplevel"] = 3;
@@ -445,7 +452,11 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 
 #if CURRENT_PLATFORM != PLATFORM_PSP
 			Json::Value pj;
+			#if CURRENT_PLATFORM == PLATFORM_WIN
 			if (std::filesystem::exists("./playerdata/" + opUser + ".json")) {
+			#else
+			if (std::experimental::filesystem::exists("./playerdata/" + opUser + ".json")) {
+			#endif
 				//Load a JSON for their stats.
 				pj = Utilities::JSON::openJSON("./playerdata/" + opUser + ".json");
 				pj["oplevel"] = 3;

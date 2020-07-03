@@ -12,8 +12,10 @@
 #include "../Internal/InternalServer.h"
 #if CURRENT_PLATFORM == PLATFORM_PSP
 #include <dirent.h>
-#else
+#elif CURRENT_PLATFORM == PLATFORM_WIN
 #include <filesystem>
+#else
+#include <experimental/filesystem>
 #endif
 
 namespace Minecraft::Server::Protocol {
@@ -71,7 +73,11 @@ namespace Minecraft::Server::Protocol {
 
 		}
 #else
+#if CURRENT_PLATFORM == PLATFORM_WIN
 		if (std::filesystem::exists("./playerdata/" + Internal::Player::g_Player.username + ".json")) {
+#else
+		if (std::experimental::filesystem::exists("./playerdata/" + Internal::Player::g_Player.username + ".json")) {
+#endif
 			utilityPrint("Found Player Profile", LOGGER_LEVEL_TRACE);
 			//Load a JSON for their stats.
 			playerJSON = Utilities::JSON::openJSON("./playerdata/" + std::string(Internal::Player::g_Player.username + ".json"));

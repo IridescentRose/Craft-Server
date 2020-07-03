@@ -1,16 +1,20 @@
 #include "Socket2.h"
-#if CURRENT_PLATFORM == PLATFORM_PSP
+#if CURRENT_PLATFORM == PLATFORM_PSP || (CURRENT_PLATFORM == PLATFORM_NIX)
 #include <sys/socket.h>
 #include <fcntl.h>
+#include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 #else
-
 #define WIN32_LEAN_AND_MEAN 1
 #include <winsock2.h>
 #include <windows.h>
-#include <thread>
 #include <Ws2tcpip.h>
+#endif
 
+#if CURRENT_PLATFORM != PLATFORM_PSP
+#include <thread>
 #endif
 
 #include "NetworkManager2.h"
@@ -74,13 +78,13 @@ namespace Minecraft::Server {
 
 	ServerSocket::~ServerSocket()
 	{
-#if CURRENT_PLATFORM == PLATFORM_PSP
+#if CURRENT_PLATFORM == PLATFORM_PSP || (CURRENT_PLATFORM == PLATFORM_NIX)
 		close(m_Connection);
 #else
 		closesocket(m_Connection);
 #endif
 
-#if CURRENT_PLATFORM == PLATFORM_PSP
+#if CURRENT_PLATFORM == PLATFORM_PSP || (CURRENT_PLATFORM == PLATFORM_NIX)
 		close(m_Socketfd);
 #else
 		closesocket(m_Socketfd);
@@ -118,7 +122,7 @@ namespace Minecraft::Server {
 			char read;
 			do {
 				read = data[readed];
-				int value = (read & 0b01111111);
+				int value = (read & 0b01111111);	
 				result |= (value << (7 * readed));
 				readed++;
 			} while ((read & 0b10000000) != 0);
@@ -184,7 +188,7 @@ namespace Minecraft::Server {
 
 			utilityPrint("Socket connection closed!", Utilities::LOGGER_LEVEL_WARN);
 			connected = false;
-#if CURRENT_PLATFORM == PLATFORM_PSP
+#if CURRENT_PLATFORM == PLATFORM_PSP || (CURRENT_PLATFORM == PLATFORM_NIX)
 			//close(m_Connection);
 #else
 			closesocket(m_Connection);
@@ -193,7 +197,7 @@ namespace Minecraft::Server {
 	}
 	void ServerSocket::ListenState()
 	{
-#if CURRENT_PLATFORM == PLATFORM_PSP
+#if CURRENT_PLATFORM == PLATFORM_PSP || (CURRENT_PLATFORM == PLATFORM_NIX)
 		//close(m_Connection);
 #else
 		closesocket(m_Connection);
@@ -225,7 +229,7 @@ namespace Minecraft::Server {
 	}
 	void ServerSocket::SetBlocking(bool val)
 	{
-#if CURRENT_PLATFORM == PLATFORM_PSP
+#if CURRENT_PLATFORM == PLATFORM_PSP || (CURRENT_PLATFORM == PLATFORM_NIX)
 		if (val) {
 			int flags = fcntl(m_Connection, F_GETFL, 0);
 			flags &= ~O_NONBLOCK;
@@ -246,7 +250,7 @@ namespace Minecraft::Server {
 	void ServerSocket::Close()
 	{
 		connected = false; 
-#if CURRENT_PLATFORM == PLATFORM_PSP
+#if CURRENT_PLATFORM == PLATFORM_PSP || (CURRENT_PLATFORM == PLATFORM_NIX)
 			close(m_Connection);
 #else
 		closesocket(m_Connection);
@@ -259,7 +263,7 @@ namespace Minecraft::Server {
 
 		if (res == 0) {
 			utilityPrint("Socket connection closed!", Utilities::LOGGER_LEVEL_WARN); 
-#if CURRENT_PLATFORM == PLATFORM_PSP
+#if CURRENT_PLATFORM == PLATFORM_PSP || (CURRENT_PLATFORM == PLATFORM_NIX)
 				close(m_Connection);
 #else
 			closesocket(m_Connection);
