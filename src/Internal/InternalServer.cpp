@@ -1,4 +1,5 @@
 #include "InternalServer.h"
+#include <iostream>
 #include "../Utilities/Utils.h"
 #include "../Protocol/Play.h"
 
@@ -9,6 +10,7 @@ namespace Minecraft::Server::Internal {
 		chunkMap.clear();
 		bopen = false;
 		lastPos = { -1000, -1000 };
+		delAll = false;
 	}
 	InternalServer::~InternalServer()
 	{
@@ -35,6 +37,17 @@ namespace Minecraft::Server::Internal {
 		bopen = false;
 
 		//tickUpdate->Kill();
+
+		if (chunkMap.size() > 0) {
+			for (auto& [pos, chunk] : chunkMap) {
+				if (chunk != nullptr) {
+					delete chunk;
+					chunk = nullptr;
+				}
+			}
+		}
+		chunkMap.clear();
+
 		utilityPrint("Stopping Internal Server!", LOGGER_LEVEL_INFO);
 	}
 	int InternalServer::tickUpdateThread(unsigned int argc, void* argv)
@@ -57,6 +70,7 @@ namespace Minecraft::Server::Internal {
 
 	void InternalServer::chunkgenUpdate()
 	{
+		std::cout << lastPos.x << " " << lastPos.y << std::endl;
 
 		glm::ivec2 v = { (int)(Player::g_Player.x / (16.0f)), (int)(Player::g_Player.z / (16.0f)) };
 
@@ -78,10 +92,12 @@ namespace Minecraft::Server::Internal {
 
 			for (auto& [pos, chunk] : chunkMap) {
 				bool need = false;
-				for (auto& v : needed) {
-					if (v == pos) {
-						//Is needed
-						need = true;
+				if(!delAll){
+					for (auto& v : needed) {
+						if (v == pos) {
+							//Is needed
+							need = true;
+						}
 					}
 				}
 
@@ -92,6 +108,7 @@ namespace Minecraft::Server::Internal {
 
 			//DIE OLD ONES!
 			for (auto chk : excess) {
+				std::cout << "DELETING" << std::endl;
 				Protocol::Play::PacketsOut::send_unload_chunk(chunkMap[chk]->getX(), chunkMap[chk]->getZ());
 				delete chunkMap[chk];
 				chunkMap.erase(chk);
@@ -100,6 +117,7 @@ namespace Minecraft::Server::Internal {
 			//Make new
 			for (auto chk : needed) {
 				if (chunkMap.find(chk) == chunkMap.end()) {
+					std::cout << "GENNING" << std::endl;
 					ChunkColumn* chunk = new ChunkColumn(chk.x, chk.y);
 
 					for (int i = 0; i < 5; i++){

@@ -159,6 +159,15 @@ namespace Minecraft::Server {
 				pIn->buffer->WriteBEUInt8(b[i]);
 			}
 
+			if (g_NetMan->compression) {
+				uint32_t dataLen = 0;
+				pIn->buffer->ReadVarInt32(dataLen);
+
+				if (dataLen > 0) {
+					Utilities::detail::core_Logger->log("Received COMPRESSED Packet! NO HANDLER!", Utilities::LOGGER_LEVEL_WARN);
+				}
+			}
+
 			if (pIn != NULL && pIn->buffer->GetUsedSpace() > 0) {
 				uint8_t t = 0;
 				pIn->buffer->ReadBEUInt8(t);
@@ -189,7 +198,7 @@ namespace Minecraft::Server {
 			utilityPrint("Socket connection closed!", Utilities::LOGGER_LEVEL_WARN);
 			connected = false;
 #if CURRENT_PLATFORM == PLATFORM_PSP || (CURRENT_PLATFORM == PLATFORM_NIX)
-			//close(m_Connection);
+			close(m_Connection);
 #else
 			closesocket(m_Connection);
 #endif
@@ -198,7 +207,7 @@ namespace Minecraft::Server {
 	void ServerSocket::ListenState()
 	{
 #if CURRENT_PLATFORM == PLATFORM_PSP || (CURRENT_PLATFORM == PLATFORM_NIX)
-		//close(m_Connection);
+		close(m_Connection);
 #else
 		closesocket(m_Connection);
 #endif
@@ -286,6 +295,7 @@ namespace Minecraft::Server {
 
 		switch (connectionStatus) {
 		case CONNECTION_STATE_HANDSHAKE: {
+			g_NetMan->compression = false;
 			g_NetMan->AddPacketHandler(Protocol::Handshake::HANDSHAKE, Protocol::Handshake::handshake_packet_handler);
 			break;
 		}

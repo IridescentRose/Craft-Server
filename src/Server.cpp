@@ -60,6 +60,8 @@ namespace Minecraft::Server {
 			if (g_NetMan->m_Socket->getConnectionStatus() == CONNECTION_STATE_PLAY) {
 				if (!Internal::g_InternalServer->isOpen()) {
 					Internal::g_InternalServer->start();
+
+					Internal::g_InternalServer->lastPos = { -1000, -1000 };
 				}
 			}
 			int pc = 0;

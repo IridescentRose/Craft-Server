@@ -1,6 +1,5 @@
 #include "NetworkManager2.h"
-
-#include "NetworkManager2.h"
+#include <zlib/zlib.h>
 
 namespace Minecraft::Server {
 	NetworkManager::NetworkManager(ServerSocket* socket)
@@ -26,32 +25,100 @@ namespace Minecraft::Server {
 
 		int len = packetQueue.size();
 		for (int i = 0; i < len; i++) {
-			int packetLength;
+			uint64_t packetLength;
 
 			packetLength = packetQueue.front()->buffer->GetUsedSpace() + 1;
 			
 			ByteBuffer* bbuf = new ByteBuffer(packetLength + 5); //512 KB
 
-			//Header
-			bbuf->WriteVarInt32(packetLength);
+			if (compression) {
 
-			bbuf->WriteBEUInt8(packetQueue.front()->ID);
+				if (packetLength > 256) { //If length > threshold
+					bbuf->WriteVarInt32(packetLength);
 
-			packetQueue.front()->buffer->ResetRead();
-			//Add body
-			for (int i = 0; i < packetQueue.front()->buffer->GetUsedSpace(); i++) {
-				uint8_t temp;
-				packetQueue.front()->buffer->ReadBEUInt8(temp);
-				bbuf->WriteBEUInt8(temp);
-			}
 
-			Utilities::detail::core_Logger->log("Sending packet with ID: " + std::to_string(packetQueue.front()->ID), Utilities::LOGGER_LEVEL_DEBUG);
-			//Send over socket
+					ByteBuffer* bbuf2 = new ByteBuffer(packetLength + 5);
+					bbuf2->WriteBEUInt8(packetQueue.front()->ID);
+					for (int i = 0; i < packetQueue.front()->buffer->GetUsedSpace(); i++) {
+						uint8_t temp;
+						packetQueue.front()->buffer->ReadBEUInt8(temp);
+						bbuf2->WriteBEUInt8(temp);
+					}
+
+					//COMPRESS DATA!
+					char byteBuffer[200 KiB];
+
+					uLongf csize = compressBound(packetLength);
+					if (csize > 200 KiB) {
+						Utilities::detail::core_Logger->log("FATAL! COMPRESSED SIZE TOO LARGE", LOGGER_LEVEL_ERROR);
+						throw std::runtime_error("FATAL! COMPRESSED SIZE TOO LARGE: " + std::to_string(csize));
+					}
+
+					int32_t stat = compress2((Bytef*)byteBuffer, &csize, (const Bytef*)bbuf2->m_Buffer, bbuf2->GetUsedSpace(), Z_DEFAULT_COMPRESSION);
+					delete bbuf2;
+
+					if (stat != Z_OK) {
+						Utilities::detail::core_Logger->log("FATAL! FAILED TO COMPRESS", LOGGER_LEVEL_ERROR);
+						throw std::runtime_error("FAILED TO COMPRESS: " + std::to_string(stat));
+					}
+
+					for (int i = 0; i < csize; i++) {
+						bbuf->WriteBEUInt8(byteBuffer[i]);
+					}
+
+				}
+				else {
+					bbuf->WriteVarInt32(0);
+					bbuf->WriteBEUInt8(packetQueue.front()->ID);
+
+					packetQueue.front()->buffer->ResetRead();
+					//Add body
+					for (int i = 0; i < packetQueue.front()->buffer->GetUsedSpace(); i++) {
+						uint8_t temp;
+						packetQueue.front()->buffer->ReadBEUInt8(temp);
+						bbuf->WriteBEUInt8(temp);
+					}
+				}
+
+				ByteBuffer* bbuf2 = new ByteBuffer(bbuf->GetUsedSpace() + 5);
+				bbuf2->WriteVarInt32(bbuf->GetUsedSpace());
+
+				for (int i = 0; i < bbuf->GetUsedSpace(); i++) {
+					uint8_t temp;
+					bbuf->ReadBEUInt8(temp);
+					bbuf2->WriteBEUInt8(temp);
+				}
+
+				Utilities::detail::core_Logger->log("Sending packet with ID: " + std::to_string(packetQueue.front()->ID), Utilities::LOGGER_LEVEL_DEBUG);
+				//Send over socket
 #if CURRENT_PLATFORM == PLATFORM_PSP
-			sceKernelDcacheWritebackInvalidateAll();
+				sceKernelDcacheWritebackInvalidateAll();
 #endif
-			m_Socket->Send(bbuf->GetUsedSpace(), bbuf->m_Buffer);
+				m_Socket->Send(bbuf2->GetUsedSpace(), bbuf2->m_Buffer);
 
+				delete bbuf2;
+			}
+			else {
+				//Header
+				bbuf->WriteVarInt32(packetLength);
+
+				bbuf->WriteBEUInt8(packetQueue.front()->ID);
+
+				packetQueue.front()->buffer->ResetRead();
+				//Add body
+				for (int i = 0; i < packetQueue.front()->buffer->GetUsedSpace(); i++) {
+					uint8_t temp;
+					packetQueue.front()->buffer->ReadBEUInt8(temp);
+					bbuf->WriteBEUInt8(temp);
+				}
+
+				Utilities::detail::core_Logger->log("Sending packet with ID: " + std::to_string(packetQueue.front()->ID), Utilities::LOGGER_LEVEL_DEBUG);
+				//Send over socket
+#if CURRENT_PLATFORM == PLATFORM_PSP
+				sceKernelDcacheWritebackInvalidateAll();
+#endif
+				m_Socket->Send(bbuf->GetUsedSpace(), bbuf->m_Buffer);
+			}
 
 			delete bbuf;
 			delete packetQueue.front()->buffer;

@@ -29,6 +29,8 @@ namespace Minecraft::Server {
 
 		ServerSocket* m_Socket;
 
+		bool compression;
+
 	};
 
 	extern NetworkManager* g_NetMan;

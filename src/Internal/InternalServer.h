@@ -29,6 +29,7 @@ namespace Minecraft::Server::Internal {
 		static int tickUpdateThread(unsigned int argc, void* argv);
 		Thread* tickUpdate;
 		bool bopen;
+		bool delAll;
 	};
 
 	extern InternalServer* g_InternalServer;

@@ -19,7 +19,7 @@ namespace Minecraft::Server::Protocol {
 
 		namespace PacketsOut {
 			//TODO: ENCRYPTION!!!
-			//TODO: GZ COMPRESSION!!!
+			void send_compression_packet();
 			void send_login_success(std::string username);
 		}
 	}

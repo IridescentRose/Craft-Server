@@ -98,6 +98,7 @@ namespace Minecraft::Server::Protocol {
 		}
 #endif
 
+		PacketsOut::send_compression_packet();
 		PacketsOut::send_login_success(Internal::Player::g_Player.username);
 		g_NetMan->m_Socket->setConnectionStatus(CONNECTION_STATE_PLAY);
 		utilityPrint("Dumping Packet Load!", LOGGER_LEVEL_DEBUG);
@@ -139,6 +140,17 @@ namespace Minecraft::Server::Protocol {
 
 		return 0;
 	}
+	void Login::PacketsOut::send_compression_packet()
+	{
+		PacketOut* p = new PacketOut(4);
+		p->ID = 0x03;
+		p->buffer->WriteVarInt32(256); //Our default compression is 256 bytes
+
+		g_NetMan->AddPacket(p);
+		g_NetMan->SendPackets();
+		g_NetMan->compression = true;
+	}
+
 	void Login::PacketsOut::send_login_success(std::string username)
 	{
 		PacketOut* p2 = new PacketOut(80);

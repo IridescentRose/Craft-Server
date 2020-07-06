@@ -3,6 +3,8 @@
 namespace Minecraft::Server::Protocol {
 	int Handshake::handshake_packet_handler(PacketIn* p)
 	{
+		g_NetMan->compression = false;
+
 		uint32_t getVersion;
 		p->buffer->ReadVarInt32(getVersion);
 
