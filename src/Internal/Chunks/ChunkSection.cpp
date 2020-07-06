@@ -42,24 +42,27 @@ namespace Minecraft::Server::Internal::Chunks {
 				for (int z = 0; z < CHUNK_SECTION_LENGTH; z++) {
 
 					int idx = (((y * CHUNK_SECTION_LENGTH) + z) * CHUNK_SECTION_LENGTH) + x;
-					if (y == 0) {
+
+					int rY = cY * 16 + y;
+
+					if (rY == 0) {
 						blocks[idx] = 7 << 4;
 					}
-					else if (y < 11) {
+					else if (rY < 63) {
 						blocks[idx] = 1 << 4;
 					}
-					else if (y >= 11 && y < 14) {
+					else if (rY >= 63 && rY < 66) {
 						blocks[idx] = 3 << 4;
 					}
-					else if (y == 14) {
+					else if (rY == 66) {
 						blocks[idx] = 2 << 4;
 					}
 					else {
-						if ((x + z - y)*3 % 2 == 0) {
-							blocks[idx] = 0;
+						if ((x + z - rY)*3 % 2 == 0 && rY == 67) {
+							blocks[idx] = (31 << 4) + 1;
 						}
 						else {
-							blocks[idx] = (31 << 4) + 1;
+							blocks[idx] = 0;
 						}
 					}
 				}

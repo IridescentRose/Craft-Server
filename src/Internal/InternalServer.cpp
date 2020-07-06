@@ -70,9 +70,8 @@ namespace Minecraft::Server::Internal {
 
 	void InternalServer::chunkgenUpdate()
 	{
-		std::cout << lastPos.x << " " << lastPos.y << std::endl;
 
-		glm::ivec2 v = { (int)(Player::g_Player.x / (16.0f)), (int)(Player::g_Player.z / (16.0f)) };
+		glm::ivec2 v = { (float)((int)(Player::g_Player.x / (16.0f))) - 0.5f, (float)((int)(Player::g_Player.z / (16.0f))) - 0.5f };
 
 		if (v != lastPos) {
 			//WORLD MANAGEMENT
@@ -108,7 +107,6 @@ namespace Minecraft::Server::Internal {
 
 			//DIE OLD ONES!
 			for (auto chk : excess) {
-				std::cout << "DELETING" << std::endl;
 				Protocol::Play::PacketsOut::send_unload_chunk(chunkMap[chk]->getX(), chunkMap[chk]->getZ());
 				delete chunkMap[chk];
 				chunkMap.erase(chk);
@@ -117,7 +115,6 @@ namespace Minecraft::Server::Internal {
 			//Make new
 			for (auto chk : needed) {
 				if (chunkMap.find(chk) == chunkMap.end()) {
-					std::cout << "GENNING" << std::endl;
 					ChunkColumn* chunk = new ChunkColumn(chk.x, chk.y);
 
 					for (int i = 0; i < 5; i++){
