@@ -162,6 +162,7 @@
     <ClCompile Include="src\Internal\Chunks\ChunkColumn.cpp" />
     <ClCompile Include="src\Internal\Chunks\ChunkPalette.cpp" />
     <ClCompile Include="src\Internal\Chunks\ChunkSection.cpp" />
+    <ClCompile Include="src\Internal\Entity\EntityManager.cpp" />
     <ClCompile Include="src\Internal\InternalServer.cpp" />
     <ClCompile Include="src\Internal\Player\Player.cpp" />
     <ClCompile Include="src\Internal\World.cpp" />
@@ -182,6 +183,7 @@
     <ClInclude Include="src\Internal\Chunks\ChunkPalette.h" />
     <ClInclude Include="src\Internal\Chunks\ChunkSection.h" />
     <ClInclude Include="src\Internal\Entity\EntityBase.h" />
+    <ClInclude Include="src\Internal\Entity\EntityManager.h" />
     <ClInclude Include="src\Internal\InternalServer.h" />
     <ClInclude Include="src\Internal\Inventory\Slot.h" />
     <ClInclude Include="src\Internal\Player\Player.h" />

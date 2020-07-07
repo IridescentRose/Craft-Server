@@ -15,10 +15,14 @@ namespace Minecraft::Server::Internal{
 	{
 		chunkMap.clear();
 		lastPos = { -1000, -1000 };
+		entityManager = new Entity::EntityManager();
+		
 	}
 
 	void World::cleanup()
 	{
+		delete entityManager;
+
 		if (chunkMap.size() > 0) {
 			for (auto& [pos, chunk] : chunkMap) {
 				if (chunk != nullptr) {
@@ -28,6 +32,11 @@ namespace Minecraft::Server::Internal{
 				chunkMap.erase(pos);
 			}
 		}
+	}
+
+	void World::tickUpdate()
+	{
+		entityManager->update();
 	}
 
 	void World::chunkgenUpdate()
