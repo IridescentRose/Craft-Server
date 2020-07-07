@@ -3,6 +3,7 @@
 #include "Player/Player.h"
 #include <glm/glm.hpp>
 #include <map>
+#include "World.h"
 #include "Chunks/ChunkColumn.h"
 #include <mclib/common/Vector.h>
 
@@ -19,17 +20,13 @@ namespace Minecraft::Server::Internal {
 		void start();
 		void stop();
 
-		void chunkgenUpdate();
-
 		bool isOpen();
 
-		glm::ivec2 lastPos;
-		std::map<mc::Vector3i, ChunkColumn*> chunkMap;
 	private:
 		static int tickUpdateThread(unsigned int argc, void* argv);
 		Thread* tickUpdate;
 		bool bopen;
-		bool delAll;
+		
 	};
 
 	extern InternalServer* g_InternalServer;

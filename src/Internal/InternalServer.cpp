@@ -7,10 +7,8 @@ namespace Minecraft::Server::Internal {
 	InternalServer::InternalServer()
 	{
 		tickUpdate = NULL;
-		chunkMap.clear();
 		bopen = false;
-		lastPos = { -1000, -1000 };
-		delAll = false;
+		g_World = new World();
 	}
 	InternalServer::~InternalServer()
 	{
@@ -30,7 +28,7 @@ namespace Minecraft::Server::Internal {
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 #endif
 		bopen = true;
-
+		g_World->init();
 	}
 	void InternalServer::stop()
 	{
@@ -38,16 +36,7 @@ namespace Minecraft::Server::Internal {
 
 		//tickUpdate->Kill();
 
-		if (chunkMap.size() > 0) {
-			for (auto& [pos, chunk] : chunkMap) {
-				if (chunk != nullptr) {
-					delete chunk;
-					chunk = nullptr;
-				}
-			}
-		}
-		chunkMap.clear();
-
+		g_World->cleanup();
 		utilityPrint("Stopping Internal Server!", LOGGER_LEVEL_INFO);
 	}
 	int InternalServer::tickUpdateThread(unsigned int argc, void* argv)
@@ -66,72 +55,6 @@ namespace Minecraft::Server::Internal {
 
 	bool InternalServer::isOpen() {
 		return bopen;
-	}
-
-	void InternalServer::chunkgenUpdate()
-	{
-
-		glm::ivec2 v = { (float)((int)(Player::g_Player.x / (16.0f))) - 0.5f, (float)((int)(Player::g_Player.z / (16.0f))) - 0.5f };
-
-		if (v != lastPos) {
-			//WORLD MANAGEMENT
-			glm::vec2 topLeft = { v.x - 3, v.y - 3 };
-			glm::vec2 botRight = { v.x + 3, v.y + 3 };
-
-			std::vector <mc::Vector3i> needed;
-			needed.clear();
-			std::vector<mc::Vector3i> excess;
-			excess.clear();
-
-			for (int x = topLeft.x; x <= botRight.x; x++) {
-				for (int z = topLeft.y; z <= botRight.y; z++) {
-					needed.push_back({ x, z, 0 });
-				}
-			}
-
-			for (auto& [pos, chunk] : chunkMap) {
-				bool need = false;
-				if(!delAll){
-					for (auto& v : needed) {
-						if (v == pos) {
-							//Is needed
-							need = true;
-						}
-					}
-				}
-
-				if (!need) {
-					excess.push_back(pos);
-				}
-			}
-
-			//DIE OLD ONES!
-			for (auto chk : excess) {
-				Protocol::Play::PacketsOut::send_unload_chunk(chunkMap[chk]->getX(), chunkMap[chk]->getZ());
-				delete chunkMap[chk];
-				chunkMap.erase(chk);
-			}
-
-			//Make new
-			for (auto chk : needed) {
-				if (chunkMap.find(chk) == chunkMap.end()) {
-					ChunkColumn* chunk = new ChunkColumn(chk.x, chk.y);
-
-					for (int i = 0; i < 5; i++){
-						ChunkSection* chks = new ChunkSection(i);
-						chks->generateTestData();
-						chunk->addSection(chks);
-					}
-					
-					Protocol::Play::PacketsOut::send_chunk(chunk, true);
-
-					chunkMap.emplace(chk, std::move(chunk));
-				}
-			}
-			lastPos = v;
-		}
-
-
 	}
 
 	InternalServer* g_InternalServer;

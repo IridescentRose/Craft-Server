@@ -134,7 +134,41 @@ namespace Minecraft::Server::Protocol {
 	int Play::steer_boat_handler(PacketIn* p) { utilityPrint("STEER_BOAT Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::craft_recipe_request_handler(PacketIn* p) { utilityPrint("CRAFT_RECIPE_REQUEST Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::player_abilities_handler(PacketIn* p) { utilityPrint("PLAYER_ABILITIES Triggered!", LOGGER_LEVEL_WARN); return 0; }
-	int Play::player_digging_handler(PacketIn* p) { utilityPrint("PLAYER_DIGGING Triggered!", LOGGER_LEVEL_WARN); return 0; }
+	
+	int Play::player_digging_handler(PacketIn* p) { 
+		utilityPrint("PLAYER_DIGGING Triggered!", LOGGER_LEVEL_WARN); 
+
+		uint8_t status = -1;
+		p->buffer->ReadBEUInt8(status);
+
+		int64_t pos = -1;
+		p->buffer->ReadBEInt64(pos);
+
+		uint32_t BlockXRaw = (pos >> 38) & 0x03ffffff;  // Top 26 bits
+		uint32_t BlockYRaw = (pos >> 26) & 0x0fff;      // Middle 12 bits
+		uint32_t BlockZRaw = (pos & 0x03ffffff);        // Bottom 26 bits
+
+		// If the highest bit in the number's range is set, convert the number into negative:
+		int32_t x = ((BlockXRaw & 0x02000000) == 0) ? static_cast<int>(BlockXRaw) : -(0x04000000 - static_cast<int>(BlockXRaw));
+		int32_t y = ((BlockYRaw & 0x0800) == 0) ? static_cast<int>(BlockYRaw) : -(0x0800 - static_cast<int>(BlockYRaw));
+		int32_t z = ((BlockZRaw & 0x02000000) == 0) ? static_cast<int>(BlockZRaw) : -(0x04000000 - static_cast<int>(BlockZRaw));
+
+		uint8_t face = -1;
+		p->buffer->ReadBEUInt8(face);
+		utilityPrint("FACE: " + std::to_string((int)face), LOGGER_LEVEL_TRACE);
+
+		if (status == 0) {
+			//Player started digging. We do need to check for instabreak blocks...
+
+		}
+		else if (status == 2) {
+			//Player broke a full block.
+
+		}
+
+		return 0; 
+	}
+	
 	int Play::entity_action_handler(PacketIn* p) { utilityPrint("ENTITY_ACTION Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::steer_vehicle_handler(PacketIn* p) { utilityPrint("STEER_VEHICLE Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	

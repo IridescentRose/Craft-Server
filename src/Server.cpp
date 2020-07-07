@@ -60,14 +60,12 @@ namespace Minecraft::Server {
 			if (g_NetMan->m_Socket->getConnectionStatus() == CONNECTION_STATE_PLAY) {
 				if (!Internal::g_InternalServer->isOpen()) {
 					Internal::g_InternalServer->start();
-
-					Internal::g_InternalServer->lastPos = { -1000, -1000 };
 				}
 			}
 			int pc = 0;
 
 			if (g_NetMan->m_Socket->getConnectionStatus() == CONNECTION_STATE_PLAY) {
-				Internal::g_InternalServer->chunkgenUpdate();
+				Internal::g_World->chunkgenUpdate();
 			}
 
 			while (g_NetMan->ReceivePacket() && pc < 50) {
