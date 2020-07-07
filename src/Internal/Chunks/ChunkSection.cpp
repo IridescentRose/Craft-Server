@@ -46,20 +46,20 @@ namespace Minecraft::Server::Internal::Chunks {
 					int rY = cY * 16 + y;
 
 					if (rY == 0) {
-						blocks[idx] = 7 << 4;
+						blocks[idx] = 33;
 					}
 					else if (rY < 63) {
-						blocks[idx] = 1 << 4;
+						blocks[idx] = 1;
 					}
 					else if (rY >= 63 && rY < 66) {
-						blocks[idx] = 3 << 4;
+						blocks[idx] = 10;
 					}
 					else if (rY == 66) {
-						blocks[idx] = 2 << 4;
+						blocks[idx] = 9;
 					}
 					else {
 						if ((x + z - rY)*3 % 2 == 0 && rY == 67) {
-							blocks[idx] = (31 << 4) + 1;
+							blocks[idx] = 1041;
 						}
 						else {
 							blocks[idx] = 0;

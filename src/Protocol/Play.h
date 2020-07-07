@@ -10,107 +10,94 @@ using namespace Stardust::Network;
 namespace Minecraft::Server::Protocol {
 	namespace Play {
 		enum PlayPackets {
-			TELEPORT_CONFIRM			= 0x00,
-			TAB_COMPLETE				= 0x01,
-			CHAT_MESSAGE				= 0x02,
-			CLIENT_STATUS				= 0x03,
-			CLIENT_SETTINGS				= 0x04,
-			CONFIRM_TRANSACTION			= 0x05,
-			ENCHANT_ITEM				= 0x06,
-			CLICK_WINDOW				= 0x07,
-			CLOSE_WINDOW				= 0x08,
-			PLUGIN_MESSAGE				= 0x09,
-			USE_ENTITY					= 0x0A,
-			KEEP_ALIVE					= 0x0B,
-			PLAYER						= 0x0C,
-			PLAYER_POSITION				= 0x0D,
-			PLAYER_POSITION_AND_LOOK	= 0x0E,
-			PLAYER_LOOK					= 0x0F,
-			VEHICLE_MOVE				= 0x10,
-			STEER_BOAT					= 0x11,
-			CRAFT_RECIPE_REQUEST		= 0x12,
-			PLAYER_ABILITIES			= 0x13,
-			PLAYER_DIGGING				= 0x14,
-			ENTITY_ACTION				= 0x15,
-			STEER_VEHICLE				= 0x16,
-			CRAFTING_BOOK_DATA			= 0x17,
-			RESOURCE_PACK_STATUS		= 0x18,
-			ADVANCEMENT_TAB				= 0x19,
-			HELD_ITEM_CHANGE			= 0x1A,
-			CREATIVE_INVENTORY_ACTION	= 0x1B,
-			UPDATE_SIGN					= 0x1C,
-			ANIMATION					= 0x1D,
-			SPECTATE					= 0x1E,
-			PLAYER_BLOCK_PLACEMENT		= 0x1F,
-			USE_ITEM					= 0x20,
+			TELEPORT_CONFIRM = 0x00,
+			QUERY_BLOCK_NBT = 0x01,
+			CHAT_MESSAGE = 0x02,
+			CLIENT_STATUS = 0x03,
+			CLIENT_SETTINGS = 0x04,
+			TAB_COMPLETE = 0x05,
+			CONFIRM_TRANSACTION = 0x06,
+			ENCHANT_ITEM = 0x07,
+			CLICK_WINDOW = 0x08,
+			CLOSE_WINDOW = 0x09,
+			PLUGIN_MESSAGE = 0x0A,
+			EDIT_BOOK = 0x0B,
+			QUERY_ENTITY_NBT = 0x0C,
+			USE_ENTITY = 0x0D,
+			KEEP_ALIVE = 0x0E,
+			PLAYER = 0x0F,
+			PLAYER_POSITION = 0x10,
+			PLAYER_POSITION_AND_LOOK = 0x11,
+			PLAYER_LOOK = 0x12,
+			VEHICLE_MOVE = 0x13,
+			STEER_BOAT = 0x14,
+			PICK_ITEM = 0x15,
+			CRAFT_RECIPE_REQUEST = 0x16,
+			PLAYER_ABILITIES = 0x17,
+			PLAYER_DIGGING = 0x18,
+			ENTITY_ACTION = 0x19,
+			STEER_VEHICLE = 0x1A,
+			RECIPE_BOOK_DATA = 0x1B,
+			NAME_ITEM = 0x1C,
+			RESOURCE_PACK_STATUS = 0x1D,
+			ADVANCEMENT_TAB = 0x1E,
+			SELECT_TRADE = 0x1F,
+			SET_BEACON_EFFECT = 0x20,
+			HELD_ITEM_CHANGE = 0x21,
+			UPDATE_COMMAND_BLOCK = 0x22,
+			UPDATE_COMMAND_BLOCK_MINECART = 0x23,
+			CREATIVE_INVENTORY_ACTION = 0x24,
+			UPDATE_STRUCTURE_BLOCK = 0x25,
+			UPDATE_SIGN = 0x26,
+			ANIMATION = 0x27,
+			SPECTATE = 0x28,
+			PLAYER_BLOCK_PLACEMENT = 0x29,
+			USE_ITEM = 0x2A,
 		};
 
-		
 		int teleport_confirm_handler(PacketIn* p);
-		
-		int tab_complete_handler(PacketIn* p);
-		
+		int query_block_nbt_handler(PacketIn* p);
 		int chat_message_handler(PacketIn* p);
-		
 		int client_status_handler(PacketIn* p);
-		
 		int client_settings_handler(PacketIn* p);
-		
-		int confirm_transaction_handler(PacketIn* p);
-		
-		int enchant_item_handler(PacketIn* p);
-		
+		int tab_complete_handler(PacketIn* p);
 		int click_window_handler(PacketIn* p);
-		
 		int close_window_handler(PacketIn* p);
-		
 		int plugin_message_handler(PacketIn* p);
-		
-		int use_entity_handler(PacketIn* p);
-		
+		int edit_book_handler(PacketIn* p);
 		int keep_alive_handler(PacketIn* p);
-		
 		int player_handler(PacketIn* p);
-		
 		int player_position_handler(PacketIn* p);
-		
 		int player_position_and_look_handler(PacketIn* p);
-		
 		int player_look_handler(PacketIn* p);
-		
 		int vehicle_move_handler(PacketIn* p);
-		
 		int steer_boat_handler(PacketIn* p);
-		
+		int pick_item_handler(PacketIn* p);
 		int craft_recipe_request_handler(PacketIn* p);
-		
 		int player_abilities_handler(PacketIn* p);
-		
 		int player_digging_handler(PacketIn* p);
-		
 		int entity_action_handler(PacketIn* p);
-		
 		int steer_vehicle_handler(PacketIn* p);
-		
-		int crafting_book_data_handler(PacketIn* p);
-		
+		int recipe_book_data_handler(PacketIn* p);
+		int name_item_handler(PacketIn* p);
 		int resource_pack_status_handler(PacketIn* p);
-		
 		int advancement_tab_handler(PacketIn* p);
-		
+		int select_trade_handler(PacketIn* p);
+		int set_beacon_effect_handler(PacketIn* p);
 		int held_item_change_handler(PacketIn* p);
-		
+		int update_command_block_handler(PacketIn* p);
+		int update_command_block_minecart_handler(PacketIn* p);
 		int creative_inventory_action_handler(PacketIn* p);
-		
+		int update_structure_block_handler(PacketIn* p);
 		int update_sign_handler(PacketIn* p);
-		
 		int animation_handler(PacketIn* p);
-		
 		int spectate_handler(PacketIn* p);
-		
 		int player_block_placement_handler(PacketIn* p);
-		
 		int use_item_handler(PacketIn* p);
+		int confirm_transaction_handler(PacketIn* p);
+		int enchant_item_handler(PacketIn* p);
+		int query_entity_nbt_handler(PacketIn* p);
+		int use_entity_handler(PacketIn* p);
 
 		namespace PacketsOut {
 			void send_join_game(int eid);

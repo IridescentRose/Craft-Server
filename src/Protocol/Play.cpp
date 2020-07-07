@@ -69,8 +69,6 @@ namespace Minecraft::Server::Protocol {
 		return 0; 
 	}
 	
-	int Play::confirm_transaction_handler(PacketIn* p) { utilityPrint("CONFIRM_TRANSACTION Triggered!", LOGGER_LEVEL_WARN); return 0; }
-	int Play::enchant_item_handler(PacketIn* p) { utilityPrint("ENCHANT_ITEM Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::click_window_handler(PacketIn* p) { utilityPrint("CLICK_WINDOW Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::close_window_handler(PacketIn* p) { utilityPrint("CLOSE_WINDOW Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	
@@ -87,7 +85,6 @@ namespace Minecraft::Server::Protocol {
 		return 0; 
 	}
 	
-	int Play::use_entity_handler(PacketIn* p) { utilityPrint("USE_ENTITY Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	
 	int Play::keep_alive_handler(PacketIn* p) { 
 		return 0; 
@@ -171,13 +168,7 @@ namespace Minecraft::Server::Protocol {
 	
 	int Play::entity_action_handler(PacketIn* p) { utilityPrint("ENTITY_ACTION Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::steer_vehicle_handler(PacketIn* p) { utilityPrint("STEER_VEHICLE Triggered!", LOGGER_LEVEL_WARN); return 0; }
-	
-	int Play::crafting_book_data_handler(PacketIn* p) { 
-		utilityPrint("CRAFTING_BOOK_DATA Triggered!", LOGGER_LEVEL_TRACE);
-		//TODO: IMPL
-		PacketsOut::send_chat("Crafting book is not yet implemented...", "gold", "none", true);
-		return 0;
-	}
+
 
 	int Play::resource_pack_status_handler(PacketIn* p) { utilityPrint("RESOURCE_PACK_STATUS Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::advancement_tab_handler(PacketIn* p) { utilityPrint("ADVANCEMENT_TAB Triggered!", LOGGER_LEVEL_WARN); return 0; }
@@ -339,7 +330,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_spawn_position()
 void Minecraft::Server::Protocol::Play::PacketsOut::send_keepalive(long long int ll)
 {
 	PacketOut* p = new PacketOut(9);
-	p->ID = 0x1F;
+	p->ID = 0x21;
 	p->buffer->WriteBEInt64(ll);
 
 	g_NetMan->AddPacket(p);
@@ -735,115 +726,16 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_change_gamestate(uint8_
 	g_NetMan->SendPackets();
 }
 
-void Minecraft::Server::Protocol::Play::PacketsOut::send_demo_chunk(int xx, int zz)
-{
-	Internal::Chunks::ChunkColumn* chnkc = new Internal::Chunks::ChunkColumn(xx, zz);
-	Internal::Chunks::ChunkSection* chnks = new Internal::Chunks::ChunkSection(0);
-	chnks->generateTestData();
-	chnkc->addSection(chnks);
-
-	PacketOut* p = new PacketOut(512 KiB);
-	p->ID = 0x20;
-
-	p->buffer->WriteBEInt32(chnkc->getX());
-	p->buffer->WriteBEInt32(chnkc->getZ());
-
-	p->buffer->WriteBool(true);
-
-	int mask = 0;
-	int numSections = 0;
-	std::vector<Internal::Chunks::ChunkSection*> sections;
-	sections.clear();
-
-	for (int i = 0; i < 16; i++) {
-		Internal::Chunks::ChunkSection* cs = chnkc->getSection(i);
-		if (cs != NULL && !cs->isEmpty()) {
-			mask |= (1 << i);
-			numSections++;
-			sections.push_back(cs);
-		}
-	}
-	
-	p->buffer->WriteVarInt32(mask);
-
-	std::vector<Network::byte> byteBuffer;
-	byteBuffer.clear();
-
-	std::vector<Network::byte> chunkSecBuffer;
-	chunkSecBuffer.clear();
-
-	byteBuffer.push_back(4);
-	byteBuffer.push_back(1);
-	byteBuffer.push_back(0b10000);
-
-	//FILL OUT CHUNK SECTION BUFFER
-	for (int x = 0; x < 16; x += 2) {
-		for (int y = 0; y < 16; y++) {
-			for (int z = 0; z < 16; z++) {
-				chunkSecBuffer.push_back(0);
-			}
-		}
-	}
-
-	int value = chunkSecBuffer.size();
-	while (value > 127) {
-		byteBuffer.push_back(((byte)(value & 127)) | 128);
-
-		value >>= 7;
-	}
-	byteBuffer.push_back((byte)value & 127);
-
-	for (auto& b : chunkSecBuffer) {
-		byteBuffer.push_back(b);
-	}
-
-	for (int x = 0; x < 16; x += 2) {
-		for (int y = 0; y < 16; y++) {
-			for (int z = 0; z < 16; z++) {
-				byteBuffer.push_back(0x0);
-			}
-		}
-	}
-
-	for (int x = 0; x < 16; x += 2) {
-		for (int y = 0; y < 16; y++) {
-			for (int z = 0; z < 16; z++) {
-				byteBuffer.push_back(0xFF);
-			}
-		}
-	}
-
-	for (int x = 0; x < 16; x++) {
-		for (int z = 0; z < 16; z++) {
-			byteBuffer.push_back(chnkc->getBiomeAt(x, z));
-		}
-	}
-	int dataBufferSize = byteBuffer.size();
-
-	p->buffer->WriteVarInt32(dataBufferSize);
-	for (auto& b : byteBuffer) {
-		p->buffer->WriteBEUInt8(b);
-	}
-
-	p->buffer->WriteBEUInt8(0);
-
-	g_NetMan->AddPacket(p);
-	g_NetMan->SendPackets();
-
-	delete chnkc;
-	delete chnks;
-}
-
 
 void Minecraft::Server::Protocol::Play::PacketsOut::send_chunk(Internal::Chunks::ChunkColumn* chnkc, bool first)
 {
 	PacketOut* p = new PacketOut(512 KiB);
-	p->ID = 0x20; //CHUNK
+	p->ID = 0x22; //CHUNK
 
 	p->buffer->WriteBEInt32(chnkc->getX()); //Coord
 	p->buffer->WriteBEInt32(chnkc->getZ()); //Coord
 
-	p->buffer->WriteBool(first); //Ground up continuous
+	p->buffer->WriteBool(true); //Ground up continuous
 	
 	int mask = 0;
 	int numSections = 0;
@@ -861,27 +753,26 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chunk(Internal::Chunks:
 
 	p->buffer->WriteVarInt32(mask);
 
-	const size_t BitsPerEntry = 13;
+	const size_t BitsPerEntry = 14;
 	const size_t bitmask = (1 << BitsPerEntry) - 1;
 
 	const size_t ChunkSectionDataArraySize = (16 * 16 * 16 * BitsPerEntry) / 8 / 8;  // Convert from bit count to long count
 	size_t ChunkSectionSize = (
 		1 +                                // Bits per block - set to 13, so the global palette is used and the palette has a length of 0
-		1 +                                // Palette length
-		2 +                                // Data array length VarInt - 2 bytes for the current value
+		p->buffer->GetVarIntSize(ChunkSectionDataArraySize) +                               // Data array length VarInt - 2 bytes for the current value
 		ChunkSectionDataArraySize * 8 +    // Actual block data - multiplied by 8 because first number is longs
 		16 * 16 * 16  // Block light
 		) ;  //Data
 
 	size_t ChunkSize = (
 		ChunkSectionSize * numSections +
-		256 
+		256 * 4
 		);
 	p->buffer->WriteVarInt32(ChunkSize);
-
+	
 	for (auto& cs : sections) {
 		p->buffer->WriteBEUInt8(static_cast<uint8_t>(BitsPerEntry));
-		p->buffer->WriteVarInt32(0);  // Palette length is 0
+		//p->buffer->WriteVarInt32(0);  // Palette length is 0
 		p->buffer->WriteVarInt32(static_cast<uint32_t>(ChunkSectionDataArraySize));
 
 		uint64_t TempLong = 0;  // Temporary value that will be stored into
@@ -939,7 +830,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chunk(Internal::Chunks:
 
 	for (int x = 0; x < 16; x++) {
 		for (int z = 0; z < 16; z++) {
-			p->buffer->WriteBEUInt8(chnkc->getBiomeAt(x, z));
+			p->buffer->WriteBEInt32(chnkc->getBiomeAt(x, z));
 		}
 	}
 
@@ -952,26 +843,28 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chunk(Internal::Chunks:
 
 }
 
-void Minecraft::Server::Protocol::Play::PacketsOut::send_test_update(int x, int z)
-{
-	PacketOut* p = new PacketOut(64);
-	p->ID = 0x0B;
-	p->buffer->WriteBEUInt64((static_cast<uint64_t>(x * 16 & 0x3FFFFFF) << 38) |
-		(static_cast<uint64_t>(15 & 0xFFF) << 26) |
-		(static_cast<uint64_t>(z * 16 & 0x3FFFFFF))); //POS
-	p->buffer->WriteVarInt32(0);
-
-	g_NetMan->AddPacket(p);
-	g_NetMan->SendPackets();
-}
-
 void Minecraft::Server::Protocol::Play::PacketsOut::send_unload_chunk(int x, int z)
 {
 	PacketOut* p = new PacketOut(64);
-	p->ID = 0x1D;
+	p->ID = 0x1F;
 	p->buffer->WriteBEInt32(x);
 	p->buffer->WriteBEInt32(z);
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
 }
+
+int Minecraft::Server::Protocol::Play::edit_book_handler(PacketIn* p) { utilityPrint("UNHANDLED PACKET: " + std::to_string((int)p->ID), LOGGER_LEVEL_WARN); return 0; }
+int Minecraft::Server::Protocol::Play::query_block_nbt_handler(PacketIn* p) { utilityPrint("UNHANDLED PACKET: " + std::to_string((int)p->ID), LOGGER_LEVEL_WARN); return 0; }
+int Minecraft::Server::Protocol::Play::update_structure_block_handler(PacketIn* p) { utilityPrint("UNHANDLED PACKET: " + std::to_string((int)p->ID), LOGGER_LEVEL_WARN); return 0; }
+int Minecraft::Server::Protocol::Play::update_command_block_handler(PacketIn* p) { utilityPrint("UNHANDLED PACKET: " + std::to_string((int)p->ID), LOGGER_LEVEL_WARN); return 0; }
+int Minecraft::Server::Protocol::Play::update_command_block_minecart_handler(PacketIn* p) { utilityPrint("UNHANDLED PACKET: " + std::to_string((int)p->ID), LOGGER_LEVEL_WARN); return 0; }
+int Minecraft::Server::Protocol::Play::select_trade_handler(PacketIn* p) { utilityPrint("UNHANDLED PACKET: " + std::to_string((int)p->ID), LOGGER_LEVEL_WARN); return 0; }
+int Minecraft::Server::Protocol::Play::set_beacon_effect_handler(PacketIn* p) { utilityPrint("UNHANDLED PACKET: " + std::to_string((int)p->ID), LOGGER_LEVEL_WARN); return 0; }
+int Minecraft::Server::Protocol::Play::recipe_book_data_handler(PacketIn* p) { utilityPrint("UNHANDLED PACKET: " + std::to_string((int)p->ID), LOGGER_LEVEL_WARN); return 0; }
+int Minecraft::Server::Protocol::Play::name_item_handler(PacketIn* p) { utilityPrint("UNHANDLED PACKET: " + std::to_string((int)p->ID), LOGGER_LEVEL_WARN); return 0; }
+int Minecraft::Server::Protocol::Play::pick_item_handler(PacketIn* p) { utilityPrint("UNHANDLED PACKET: " + std::to_string((int)p->ID), LOGGER_LEVEL_WARN); return 0; }
+int Minecraft::Server::Protocol::Play::confirm_transaction_handler(PacketIn* p) { utilityPrint("UNHANDLED PACKET: " + std::to_string((int)p->ID), LOGGER_LEVEL_WARN); return 0; }
+int Minecraft::Server::Protocol::Play::enchant_item_handler(PacketIn* p) { utilityPrint("UNHANDLED PACKET: " + std::to_string((int)p->ID), LOGGER_LEVEL_WARN); return 0; }
+int Minecraft::Server::Protocol::Play::query_entity_nbt_handler(PacketIn* p) { utilityPrint("UNHANDLED PACKET: " + std::to_string((int)p->ID), LOGGER_LEVEL_WARN); return 0; }
+int Minecraft::Server::Protocol::Play::use_entity_handler(PacketIn* p) { utilityPrint("UNHANDLED PACKET: " + std::to_string((int)p->ID), LOGGER_LEVEL_WARN); return 0; }
