@@ -25,6 +25,18 @@ namespace Minecraft::Server::Protocol {
 	Json::Value banned;
 	bool downfall;
 
+	void Login::PacketsOut::send_disconnect(std::string reason, std::string color) {
+		//Send a disconnect
+		PacketOut* p2 = new PacketOut(512);
+		p2->ID = 0x0;
+
+		std::string build = "{\"text\":\"" + reason + "\",\"color\":\"" + color + "\"}";
+		p2->buffer->WriteVarUTF8String(build);
+		g_NetMan->AddPacket(p2);
+		g_NetMan->SendPackets();
+		g_NetMan->m_Socket->Close();
+	}
+
 	int Login::login_start_packet_handler(PacketIn* p){
 		downfall = false;
 
@@ -98,26 +110,28 @@ namespace Minecraft::Server::Protocol {
 		}
 #endif
 
-		PacketsOut::send_compression_packet();
-		PacketsOut::send_login_success(Internal::Player::g_Player.username);
-		g_NetMan->m_Socket->setConnectionStatus(CONNECTION_STATE_PLAY);
-		
-		/*
-		utilityPrint("Dumping Packet Load!", LOGGER_LEVEL_DEBUG);
-
-		int eid = 1337;
-
-		Play::PacketsOut::send_join_game(eid);
-
 		//Check bans
 		for (int i = 0; i < banned.size(); i++) {
 			if (banned[i].asString() == Internal::Player::g_Player.username || banned[i].asString() == "all") {
 				//They're banned! Don't connect!.
-				Play::PacketsOut::send_disconnect("You are banned!", "dark_red");
+				PacketsOut::send_disconnect("You are banned!", "dark_red");
 				return -1;
 			}
 		}
 
+		PacketsOut::send_compression_packet();
+		PacketsOut::send_login_success(Internal::Player::g_Player.username);
+		g_NetMan->m_Socket->setConnectionStatus(CONNECTION_STATE_PLAY);
+		
+		
+		utilityPrint("Dumping Packet Load!", LOGGER_LEVEL_DEBUG);
+		
+		int eid = 1337;
+
+		Play::PacketsOut::send_join_game(eid);
+		
+		
+		/*
 		Play::PacketsOut::send_plugin_message("MC|Brand");
 		Play::PacketsOut::send_server_difficulty();
 		Play::PacketsOut::send_player_abilities();

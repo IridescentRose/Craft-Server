@@ -21,6 +21,7 @@ namespace Minecraft::Server::Protocol {
 			//TODO: ENCRYPTION!!!
 			void send_compression_packet();
 			void send_login_success(std::string username);
+			void send_disconnect(std::string reason, std::string color);
 		}
 	}
 }

@@ -200,7 +200,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_join_game(int eid)
 {
 	PacketOut* p = new PacketOut(90);
 
-	p->ID = 0x23;
+	p->ID = 0x25;
 	p->buffer->WriteBEInt32(eid);
 	p->buffer->WriteBEUInt8(g_Config.gamemode);
 	p->buffer->WriteBEInt32(0); //DIMENSION;
@@ -711,8 +711,8 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_disconnect(std::string 
 {
 
 	//Send a disconnect
-	PacketOut* p2 = new PacketOut(80);
-	p2->ID = 0x1A;
+	PacketOut* p2 = new PacketOut(512);
+	p2->ID = 0x0;
 
 	std::string build = "{\"text\":\"" + reason + "\",\"color\":\"" + color + "\"}";
 	p2->buffer->WriteVarUTF8String(build);
