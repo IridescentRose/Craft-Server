@@ -17,12 +17,16 @@ namespace Minecraft::Server::Internal{
 		lastPos = { -1000, -1000 };
 
 		entityManager.init();
+		inventory.init();
+
+		Protocol::Play::PacketsOut::send_initial_inventory();
 	}
 
 	void World::cleanup()
 	{
-
+		inventory.cleanup();
 		entityManager.cleanup();
+		
 
 		if (chunkMap.size() > 0) {
 			for (auto& [pos, chunk] : chunkMap) {

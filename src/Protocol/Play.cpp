@@ -4,6 +4,7 @@
 #include <Utilities/JSON.h>
 #include "../Utilities/Config.h"
 #include "Login.h"
+#include <iostream>
 #include <Utilities/UUID.h>
 #include "../Internal/InternalServer.h"
 #if CURRENT_PLATFORM == PLATFORM_PSP
@@ -849,6 +850,34 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_unload_chunk(int x, int
 	p->ID = 0x1F;
 	p->buffer->WriteBEInt32(x);
 	p->buffer->WriteBEInt32(z);
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
+}
+
+#include "../Internal/World.h"
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_initial_inventory()
+{
+	PacketOut* p = new PacketOut(2 KiB);
+	p->ID = 0x15;
+
+	p->buffer->WriteBEUInt8(0);
+	p->buffer->WriteBEUInt16(46);
+
+	for (int i = 0; i < 46; i++) {
+		Internal::Inventory::Slot slt = Internal::g_World->inventory.getSlot(i);
+
+		p->buffer->WriteBool(slt.present);
+		if (slt.present) {
+			p->buffer->WriteVarInt32(slt.id);
+			p->buffer->WriteBEUInt8(slt.item_count);
+
+			//TODO: ADD NBT DATA
+			p->buffer->WriteBEUInt8(0);
+		}
+
+	}
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();

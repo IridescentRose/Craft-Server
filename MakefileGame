@@ -12,6 +12,7 @@ src/Internal/InternalServer.o \
 src/Internal/World.o \
 src/Internal/Entity/EntityManager.o \
 src/Internal/Player/Player.o \
+src/Internal/Inventory/Inventory.o \
 src/Internal/Chunks/ChunkColumn.o \
 src/Internal/Chunks/ChunkSection.o \
 src/Internal/Chunks/ChunkPalette.o \

@@ -98,7 +98,7 @@ namespace Minecraft::Server::Protocol {
 		int enchant_item_handler(PacketIn* p);
 		int query_entity_nbt_handler(PacketIn* p);
 		int use_entity_handler(PacketIn* p);
-
+		
 		namespace PacketsOut {
 			void send_join_game(int eid);
 			void send_plugin_message(std::string type);
@@ -119,11 +119,11 @@ namespace Minecraft::Server::Protocol {
 			void send_disconnect(std::string reason, std::string color = "gold");
 
 			void send_change_gamestate(uint8_t code, float value);
-			void send_demo_chunk(int x, int z);
-
+			
 			void send_chunk(Internal::Chunks::ChunkColumn* chnkc, bool first);
-			void send_test_update(int x, int z);
 			void send_unload_chunk(int x, int z);
+			void send_initial_inventory();
+
 		}
 
 		namespace PacketEvents {
