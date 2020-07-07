@@ -64,9 +64,9 @@ namespace Minecraft::Server {
 			}
 			int pc = 0;
 
-			if (g_NetMan->m_Socket->getConnectionStatus() == CONNECTION_STATE_PLAY) {
-				Internal::g_World->chunkgenUpdate();
-			}
+			//if (g_NetMan->m_Socket->getConnectionStatus() == CONNECTION_STATE_PLAY) {
+			//	Internal::g_World->chunkgenUpdate();
+			//}
 
 			while (g_NetMan->ReceivePacket() && pc < 50) {
 				pc++;

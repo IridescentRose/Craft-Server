@@ -101,6 +101,8 @@ namespace Minecraft::Server::Protocol {
 		PacketsOut::send_compression_packet();
 		PacketsOut::send_login_success(Internal::Player::g_Player.username);
 		g_NetMan->m_Socket->setConnectionStatus(CONNECTION_STATE_PLAY);
+		
+		/*
 		utilityPrint("Dumping Packet Load!", LOGGER_LEVEL_DEBUG);
 
 		int eid = 1337;
@@ -137,6 +139,7 @@ namespace Minecraft::Server::Protocol {
 		if (downfall) {
 			Play::PacketsOut::send_change_gamestate(2, 0.0f);
 		}
+		*/
 
 		return 0;
 	}

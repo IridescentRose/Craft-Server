@@ -22,7 +22,7 @@ namespace Minecraft::Server::Protocol {
 		PacketOut* p2 = new PacketOut(512);
 		p2->ID = 0x00;
 
-		std::string st = "{\"description\":{\"text\":\"" + g_Config.motd + "\"},\"players\":{\"max\":" + std::to_string((int)g_Config.max_players) + ",\"online\":0},\"version\":{\"name\":\"1.12.2\",\"protocol\":340}}";
+		std::string st = "{\"description\":{\"text\":\"" + g_Config.motd + "\"},\"players\":{\"max\":" + std::to_string((int)g_Config.max_players) + ",\"online\":0},\"version\":{\"name\":\"1.13.2\",\"protocol\":404}}";
 		p2->buffer->WriteVarUTF8String(st);
 
 
