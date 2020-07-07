@@ -131,29 +131,29 @@ namespace Minecraft::Server::Protocol {
 		Play::PacketsOut::send_join_game(eid);
 		
 		
-		/*
-		Play::PacketsOut::send_plugin_message("MC|Brand");
+		
+		Play::PacketsOut::send_plugin_message("minecraft:brand");
+		
 		Play::PacketsOut::send_server_difficulty();
 		Play::PacketsOut::send_player_abilities();
+		
 		Play::PacketsOut::send_hotbar_slot(0); //Slot 0
 		Play::PacketsOut::send_entity_status(eid, 24 + Internal::Player::g_Player.operatorLevel);
-		Play::PacketsOut::send_player_list_item();
-
+		
+		Play::PacketsOut::send_player_info();
+		
 #if CURRENT_PLATFORM == PLATFORM_PSP
 		sceKernelDelayThread(50 * 1000);
 #else
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 #endif
-
 		Play::PacketsOut::send_player_position_look();
 		Play::PacketsOut::send_world_border();
 		Play::PacketsOut::send_time_update();
 		Play::PacketsOut::send_spawn_position();
-
 		if (downfall) {
 			Play::PacketsOut::send_change_gamestate(2, 0.0f);
 		}
-		*/
 
 		return 0;
 	}

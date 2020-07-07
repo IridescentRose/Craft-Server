@@ -23,7 +23,7 @@ namespace Minecraft::Server::Internal {
 		//TODO: GET BLOCK GLOBAL
 		//TODO: SET BLOCK GLOBAL
 
-		Entity::EntityManager* entityManager;
+		Entity::EntityManager entityManager;
 
 		glm::ivec2 lastPos;
 		std::map<mc::Vector3i, ChunkColumn*> chunkMap;

@@ -119,7 +119,7 @@ namespace Minecraft::Server::Protocol {
 			void send_player_abilities();
 			void send_hotbar_slot(int slot);
 			void send_entity_status(int eid, int action);
-			void send_player_list_item();
+			void send_player_info();
 			void send_player_position_look();
 			void send_world_border();
 			void send_time_update();

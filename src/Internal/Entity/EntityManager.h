@@ -12,6 +12,9 @@ namespace Minecraft::Server::Internal::Entity {
 		int addEntity(Entity* entity);
 		void clearEntity();
 
+		void init();
+		void cleanup();
+
 		void deleteEntity(int id);
 
 		void update();

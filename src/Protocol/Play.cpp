@@ -216,9 +216,9 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_join_game(int eid)
 
 void Minecraft::Server::Protocol::Play::PacketsOut::send_plugin_message(std::string type)
 {
-	if (type == "MC|Brand") {
+	if (type == "minecraft:brand") {
 		PacketOut* p = new PacketOut(512);
-		p->ID = 0x18;
+		p->ID = 0x19;
 		p->buffer->WriteVarUTF8String(type);
 		std::string serverID = "PSP-Craft";
 		p->buffer->WriteVarUTF8String(serverID);
@@ -241,9 +241,9 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_server_difficulty()
 void Minecraft::Server::Protocol::Play::PacketsOut::send_player_abilities()
 {
 	PacketOut* p = new PacketOut(12);
-	p->ID = 0x2C;
+	p->ID = 0x2E;
 	p->buffer->WriteBEUInt8(0);
-	p->buffer->WriteBEFloat(0.5f);
+	p->buffer->WriteBEFloat(0.05f);
 	p->buffer->WriteBEFloat(0.1f);
 
 	g_NetMan->AddPacket(p);
@@ -253,7 +253,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_player_abilities()
 void Minecraft::Server::Protocol::Play::PacketsOut::send_hotbar_slot(int slot)
 {
 	PacketOut* p = new PacketOut(12);
-	p->ID = 0x3A;
+	p->ID = 0x3D;
 	p->buffer->WriteBEUInt8(0);
 
 	g_NetMan->AddPacket(p);
@@ -263,7 +263,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_hotbar_slot(int slot)
 void Minecraft::Server::Protocol::Play::PacketsOut::send_entity_status(int eid, int action)
 {
 	PacketOut* p = new PacketOut(12);
-	p->ID = 0x1B;
+	p->ID = 0x1C;
 	p->buffer->WriteBEInt32(eid);
 	p->buffer->WriteBEUInt8(action);
 
@@ -271,7 +271,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_entity_status(int eid, 
 	g_NetMan->SendPackets();
 }
 
-void Minecraft::Server::Protocol::Play::PacketsOut::send_player_list_item()
+void Minecraft::Server::Protocol::Play::PacketsOut::send_player_info()
 {
 }
 
@@ -279,7 +279,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_player_position_look()
 {
 
 	PacketOut* p = new PacketOut(64);
-	p->ID = 0x2F;
+	p->ID = 0x32;
 	p->buffer->WriteBEDouble(0);
 	p->buffer->WriteBEDouble(96);
 	p->buffer->WriteBEDouble(0);
@@ -296,7 +296,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_player_position_look()
 void Minecraft::Server::Protocol::Play::PacketsOut::send_world_border()
 {
 	PacketOut* p = new PacketOut(80);
-	p->ID = 0x38;
+	p->ID = 0x3B;
 	p->buffer->WriteBEUInt8(3);
 	//INIT
 	p->buffer->WriteBEDouble(0);
@@ -318,7 +318,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_world_border()
 void Minecraft::Server::Protocol::Play::PacketsOut::send_time_update()
 {
 	PacketOut* p = new PacketOut(17);
-	p->ID = 0x47;
+	p->ID = 0x4A;
 	p->buffer->WriteBEInt64(0);
 	p->buffer->WriteBEInt64(0);
 
@@ -329,7 +329,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_time_update()
 void Minecraft::Server::Protocol::Play::PacketsOut::send_spawn_position()
 {
 	PacketOut* p = new PacketOut(10);
-	p->ID = 0x46;
+	p->ID = 0x49;
 	p->buffer->WriteBEInt64((((long long)0 & 0x3FFFFFFLL) << 38) | ((0 & 0x3FFFFFF) << 12) | (63 & 0xFFF));
 
 	g_NetMan->AddPacket(p);
@@ -349,7 +349,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_keepalive(long long int
 void Minecraft::Server::Protocol::Play::PacketsOut::send_chat(std::string text, std::string color, std::string format, bool serverChat)
 {
 	PacketOut* p = new PacketOut(1024);
-	p->ID = 0x0F;
+	p->ID = 0x0E;
 	std::string build;
 	if (serverChat) {
 		build = "{\"text\":\"" + text + "\"";
@@ -678,7 +678,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 	}
 
 	PacketOut* p = new PacketOut(1024);
-	p->ID = 0x0F;
+	p->ID = 0x0E;
 	std::string build = "{\"text\":\"" + response + "\"";
 	if (!err) {
 		build += ",\"color\":\"green\"";
@@ -712,7 +712,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_disconnect(std::string 
 
 	//Send a disconnect
 	PacketOut* p2 = new PacketOut(512);
-	p2->ID = 0x0;
+	p2->ID = 0x1B;
 
 	std::string build = "{\"text\":\"" + reason + "\",\"color\":\"" + color + "\"}";
 	p2->buffer->WriteVarUTF8String(build);
@@ -726,7 +726,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_disconnect(std::string 
 void Minecraft::Server::Protocol::Play::PacketsOut::send_change_gamestate(uint8_t code, float value)
 {
 	PacketOut* p = new PacketOut(80);
-	p->ID = 0x1E;
+	p->ID = 0x20;
 
 	p->buffer->WriteBEUInt8(code);
 	p->buffer->WriteBEFloat(value);
