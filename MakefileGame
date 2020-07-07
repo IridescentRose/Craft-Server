@@ -9,6 +9,8 @@ src/Protocol/Login.o \
 src/Protocol/Play.o \
 src/Protocol/Status.o \
 src/Internal/InternalServer.o \
+src/Internal/World.o \
+src/Internal/Entity/EntityManager.o \
 src/Internal/Player/Player.o \
 src/Internal/Chunks/ChunkColumn.o \
 src/Internal/Chunks/ChunkSection.o \
