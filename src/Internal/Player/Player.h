@@ -1,8 +1,9 @@
 #pragma once
 #include <string>
+#include "../Entity/EntityBase.h"
 
 namespace Minecraft::Server::Internal::Player {
-	struct Player {
+	struct Player : public Entity::PlayerEntity {
 		std::string username, uuid;
 		uint8_t gamemode;
 		uint8_t operatorLevel;

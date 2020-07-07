@@ -181,7 +181,9 @@
     <ClInclude Include="src\Internal\Chunks\ChunkDefines.h" />
     <ClInclude Include="src\Internal\Chunks\ChunkPalette.h" />
     <ClInclude Include="src\Internal\Chunks\ChunkSection.h" />
+    <ClInclude Include="src\Internal\Entity\EntityBase.h" />
     <ClInclude Include="src\Internal\InternalServer.h" />
+    <ClInclude Include="src\Internal\Inventory\Slot.h" />
     <ClInclude Include="src\Internal\Player\Player.h" />
     <ClInclude Include="src\Internal\World.h" />
     <ClInclude Include="src\Networking\NetworkManager2.h" />
