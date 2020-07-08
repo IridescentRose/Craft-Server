@@ -269,14 +269,14 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_player_info()
 
 void Minecraft::Server::Protocol::Play::PacketsOut::send_player_position_look()
 {
-
+	//TODO: Initial Spawn - create a generic
 	PacketOut* p = new PacketOut(64);
 	p->ID = 0x32;
-	p->buffer->WriteBEDouble(0);
-	p->buffer->WriteBEDouble(96);
-	p->buffer->WriteBEDouble(0);
-	p->buffer->WriteBEFloat(0);
-	p->buffer->WriteBEFloat(0);
+	p->buffer->WriteBEDouble(0); //X
+	p->buffer->WriteBEDouble(96); //Y
+	p->buffer->WriteBEDouble(0); //Z
+	p->buffer->WriteBEFloat(0); //Yaw
+	p->buffer->WriteBEFloat(0); //Pitch
 
 	p->buffer->WriteBEUInt8(0);
 	p->buffer->WriteBEUInt8(1);//TP ID
@@ -563,7 +563,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 		}
 		else {
 			int idx = -1;
-			for (int i = 0; i < banned.size(); i++) {
+			for (unsigned int i = 0; i < banned.size(); i++) {
 				if (banned[i].asString() == text.substr(7, text.length())) {
 					idx = i;
 				}
@@ -641,7 +641,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chat_command(std::strin
 			}
 
 			if (gmChange != g_Config.gamemode) {
-				PacketsOut::send_change_gamestate(3, gmChange);
+				PacketsOut::send_change_gamestate(3, (float)gmChange);
 				response = "Gamemode changed!";
 			}
 		}
