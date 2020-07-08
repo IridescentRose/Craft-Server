@@ -29,13 +29,7 @@ int main() {
 		g_Server->init();
 	}catch(std::runtime_error e){
 		utilityPrint(e.what(), LOGGER_LEVEL_ERROR);
-
-
-#if CURRENT_PLATFORM == PLATFORM_PSP
-		sceKernelDelayThread(1000 * 1000 * 3);
-#else
-		std::this_thread::sleep_for(std::chrono::seconds(3));
-#endif
+		Platform::delayForMS(3000);
 		Platform::exitPlatform();
 	}
 
@@ -45,11 +39,7 @@ int main() {
 		g_Server->update();
 
 		//Note: Should actually count this out - but will do
-#if CURRENT_PLATFORM == PLATFORM_PSP
-		sceKernelDelayThread(1000 * 50);
-#else
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
-#endif
+		Platform::delayForMS(50);
 	}
 
 

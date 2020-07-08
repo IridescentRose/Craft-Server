@@ -83,7 +83,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir)/include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)/lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+    <LibraryPath>$(SolutionDir)/lib;$(SolutionDir)/lib/win;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -155,12 +155,11 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libz-static.lib;jsoncpp.lib;ws2_32.lib;Stardust-Engine-Windows.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libz-static.lib;jsoncpp.lib;ws2_32.lib;Stardust-Utilities.lib;Stardust-Platform.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Internal\Chunks\ChunkColumn.cpp" />
-    <ClCompile Include="src\Internal\Chunks\ChunkPalette.cpp" />
     <ClCompile Include="src\Internal\Chunks\ChunkSection.cpp" />
     <ClCompile Include="src\Internal\Entity\EntityManager.cpp" />
     <ClCompile Include="src\Internal\InternalServer.cpp" />
@@ -181,7 +180,6 @@
   <ItemGroup>
     <ClInclude Include="src\Internal\Chunks\ChunkColumn.h" />
     <ClInclude Include="src\Internal\Chunks\ChunkDefines.h" />
-    <ClInclude Include="src\Internal\Chunks\ChunkPalette.h" />
     <ClInclude Include="src\Internal\Chunks\ChunkSection.h" />
     <ClInclude Include="src\Internal\Entity\EntityBase.h" />
     <ClInclude Include="src\Internal\Entity\EntityManager.h" />

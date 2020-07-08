@@ -142,11 +142,7 @@ namespace Minecraft::Server::Protocol {
 		
 		Play::PacketsOut::send_player_info();
 		
-#if CURRENT_PLATFORM == PLATFORM_PSP
-		sceKernelDelayThread(50 * 1000);
-#else
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
-#endif
+		Platform::delayForMS(50);
 		Play::PacketsOut::send_player_position_look();
 		Play::PacketsOut::send_world_border();
 		Play::PacketsOut::send_time_update();
