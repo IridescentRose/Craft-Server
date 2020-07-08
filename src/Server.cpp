@@ -25,9 +25,11 @@ namespace Minecraft::Server {
 		m_IsRunning = true;
 		utilityPrint("Starting Server...", LOGGER_LEVEL_INFO);
 
+		std::cout << "B" << std::endl;
 		if (!Network::g_NetworkDriver.Init()) {
 			throw std::runtime_error("Fatal: Could not connect to Network! Check Stardust Core Logs!");
 		}
+		std::cout << "B" << std::endl;
 
 #ifdef CRAFT_SERVER_DEBUG
 #if CURRENT_PLATFORM == PLATFORM_PSP

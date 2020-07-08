@@ -60,5 +60,5 @@ void utilityPrint(std::string s, int level)
 	std::cout << str.str();
 #endif
 
-	//Stardust::Utilities::app_Logger->log(s, (Stardust::Utilities::LoggerLevel)level);
+	Stardust::Utilities::app_Logger->log(s, (Stardust::Utilities::LoggerLevel)level);
 }

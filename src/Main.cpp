@@ -16,8 +16,8 @@ int main() {
 	Platform::initPlatform("Craft-Server");
 
 #ifdef CRAFT_SERVER_DEBUG
-	app_Logger->currentLevel = LOGGER_LEVEL_ERROR;
-	detail::core_Logger->currentLevel = LOGGER_LEVEL_ERROR;
+	app_Logger->currentLevel = LOGGER_LEVEL_TRACE;
+	detail::core_Logger->currentLevel = LOGGER_LEVEL_TRACE;
 
 #if CURRENT_PLATFORM == PLATFORM_PSP
 	pspDebugScreenInit();
