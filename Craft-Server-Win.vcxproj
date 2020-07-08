@@ -168,7 +168,6 @@
     <ClCompile Include="src\Internal\World.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Networking\NetworkManager2.cpp" />
-    <ClCompile Include="src\Networking\Socket2.cpp" />
     <ClCompile Include="src\Protocol\Handshake.cpp" />
     <ClCompile Include="src\Protocol\Login.cpp" />
     <ClCompile Include="src\Protocol\Play.cpp" />
@@ -189,7 +188,6 @@
     <ClInclude Include="src\Internal\Player\Player.h" />
     <ClInclude Include="src\Internal\World.h" />
     <ClInclude Include="src\Networking\NetworkManager2.h" />
-    <ClInclude Include="src\Networking\Socket2.h" />
     <ClInclude Include="src\Protocol\Handshake.h" />
     <ClInclude Include="src\Protocol\Login.h" />
     <ClInclude Include="src\Protocol\Play.h" />

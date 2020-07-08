@@ -1,6 +1,6 @@
 #pragma once
 #include "Utilities/Utils.h"
-#include "Networking/Socket2.h"
+#include <Network/Socket.h>
 #include "Networking/NetworkManager2.h"
 #include <Utilities/Thread.h>
 

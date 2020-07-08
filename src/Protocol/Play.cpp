@@ -769,7 +769,7 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chunk(Internal::Chunks:
 		ChunkSectionSize * numSections +
 		256 * 4
 		);
-	p->buffer->WriteVarInt32(ChunkSize);
+	p->buffer->WriteVarInt32((uint32_t)ChunkSize);
 	
 	for (auto& cs : sections) {
 		p->buffer->WriteBEUInt8(static_cast<uint8_t>(BitsPerEntry));
@@ -838,9 +838,9 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_chunk(Internal::Chunks:
 	p->buffer->WriteBEUInt8(0);
 	
 	g_NetMan->AddPacket(p);
-	g_NetMan->m_Socket->SetBlocking(true);
+	g_NetMan->m_Socket->SetBlock(true);
 	g_NetMan->SendPackets();
-	g_NetMan->m_Socket->SetBlocking(false);
+	g_NetMan->m_Socket->SetBlock(false);
 
 }
 

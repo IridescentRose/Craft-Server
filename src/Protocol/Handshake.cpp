@@ -1,5 +1,5 @@
 #include "Handshake.h"
-
+#include <iostream>
 namespace Minecraft::Server::Protocol {
 	int Handshake::handshake_packet_handler(PacketIn* p)
 	{
@@ -17,7 +17,7 @@ namespace Minecraft::Server::Protocol {
 		uint8_t state;
 		p->buffer->ReadBEUInt8(state);
 
-		g_NetMan->m_Socket->setConnectionStatus(state);
+		g_NetMan->setConnectionStatus(state);
 		return 0;
 	}
 }

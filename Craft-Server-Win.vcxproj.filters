@@ -30,9 +30,6 @@
     <ClCompile Include="src\Networking\NetworkManager2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Networking\Socket2.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Protocol\Handshake.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -84,9 +81,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Networking\NetworkManager2.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Networking\Socket2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Protocol\Handshake.h">

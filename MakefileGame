@@ -1,7 +1,6 @@
 TARGET = PSP-Craft-Server
 OBJS = src/Utilities/Utils.o \
 src/Server.o \
-src/Networking/Socket2.o \
 src/Networking/NetworkManager2.o \
 src/Utilities/Config.o \
 src/Protocol/Handshake.o \
@@ -27,7 +26,7 @@ BUILD_PRX = 1
 PSP_FW_VERSION=500
 PSP_LARGE_MEMORY = 1
 
-LIBDIR += ./lib
+LIBDIR += ./lib/psp
 LDFLAGS =
 LIBS= -lstardust -lpng -lpspaudiolib -lpspaudio -lpspaudiocodec -lintraFont -lz -ljson -lpspgum -lpspgu -lstdc++ -lpsprtc -lpspctrl -lm -lpspvfpu -lpspsdk -lpsppower -lpsphttp -lpspmath -lmclib
 

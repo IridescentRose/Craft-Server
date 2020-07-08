@@ -4,6 +4,7 @@
 #include <Utilities/JSON.h>
 #include "../Internal/Chunks/ChunkColumn.h"
 
+#include <Network/NetworkTypes.h>
 using namespace Stardust::Events;
 using namespace Stardust::Network;
 

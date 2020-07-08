@@ -7,6 +7,7 @@
 
 #include "Protocol/Play.h"
 #include "Internal/InternalServer.h"
+#include <iostream>
 
 namespace Minecraft::Server {
 	Server::Server()
@@ -37,18 +38,18 @@ namespace Minecraft::Server {
 #endif
 
 		socket = new ServerSocket(g_Config.port);
+		socket->SetBlock(false);
 		if (socket == nullptr) {
 			throw std::runtime_error("Fatal: ServerSocket is nullptr!");
 		}
 
 		g_NetMan = new NetworkManager(socket);
+		g_NetMan->setConnectionStatus(CONNECTION_STATE_HANDSHAKE);
 		if (g_NetMan == nullptr) {
 			throw std::runtime_error("Fatal: Network Manager is nullptr!");
 		}
 
 		Internal::g_InternalServer = new Internal::InternalServer();
-
-		socket->setConnectionStatus(CONNECTION_STATE_HANDSHAKE);
 	}
 
 	int count = 0;
@@ -57,14 +58,14 @@ namespace Minecraft::Server {
 	{
 		if (g_Server->socket->isAlive()) {
 
-			if (g_NetMan->m_Socket->getConnectionStatus() == CONNECTION_STATE_PLAY) {
+			if (g_NetMan->getConnectionStatus() == CONNECTION_STATE_PLAY) {
 				if (!Internal::g_InternalServer->isOpen()) {
 					Internal::g_InternalServer->start();
 				}
 			}
 			int pc = 0;
 
-			if (g_NetMan->m_Socket->getConnectionStatus() == CONNECTION_STATE_PLAY) {
+			if (g_NetMan->getConnectionStatus() == CONNECTION_STATE_PLAY) {
 				Internal::g_World->chunkgenUpdate();
 			}
 
@@ -84,10 +85,11 @@ namespace Minecraft::Server {
 			}
 		}
 		else {
-			g_Server->socket->Close();
-			Internal::g_InternalServer->stop();
+			g_NetMan->setConnectionStatus(CONNECTION_STATE_HANDSHAKE);
+			if (Internal::g_InternalServer->isOpen()) {
+				Internal::g_InternalServer->stop();
+			}
 			g_Server->socket->ListenState();
-			g_Server->socket->setConnectionStatus(CONNECTION_STATE_HANDSHAKE);
 		}
 	}
 
