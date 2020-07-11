@@ -14,6 +14,7 @@ src/Internal/Player/Player.o \
 src/Internal/Inventory/Inventory.o \
 src/Internal/Chunks/ChunkColumn.o \
 src/Internal/Chunks/ChunkSection.o \
+src/Internal/Registry/ItemRegistry.o \
 src/Main.o 
 
 INCDIR = $(PSPPATH)/include
