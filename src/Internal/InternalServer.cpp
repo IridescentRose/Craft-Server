@@ -2,6 +2,7 @@
 #include <iostream>
 #include "../Utilities/Utils.h"
 #include "../Protocol/Play.h"
+#include "Registry/ItemRegistry.h"
 
 namespace Minecraft::Server::Internal {
 	InternalServer::InternalServer()
@@ -9,6 +10,8 @@ namespace Minecraft::Server::Internal {
 		tickUpdate = NULL;
 		bopen = false;
 		g_World = new World();
+		Registry::g_ItemRegistry = new Registry::ItemRegistry();
+		Registry::g_ItemRegistry->registerVanillaItems();
 	}
 	InternalServer::~InternalServer()
 	{

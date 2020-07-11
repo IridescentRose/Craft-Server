@@ -1,4 +1,6 @@
 #include "Inventory.h"
+#include <Utilities/JSON.h>
+#include "../Registry/ItemRegistry.h"
 
 namespace Minecraft::Server::Internal::Inventory {
 	Inventory::Inventory()
@@ -12,8 +14,10 @@ namespace Minecraft::Server::Internal::Inventory {
 	}
 	void Inventory::init()
 	{
+		Json::Value vv = Stardust::Utilities::JSON::openJSON("./test.json");
+
 		for (int i = 0; i < 9; i++) {
-			inventorySpots[36 + i] = { true, (uint32_t)1, (uint8_t)64, nullptr };
+			inventorySpots[36 + i] = { true, (uint32_t)Registry::g_ItemRegistry->getIDByName(vv["item-id"].asString()), (uint8_t)64, nullptr };
 		}
 	}
 	void Inventory::cleanup()

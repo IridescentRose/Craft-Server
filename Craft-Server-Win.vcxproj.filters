@@ -63,6 +63,9 @@
     <ClCompile Include="src\Internal\Inventory\Inventory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Internal\Registry\ItemRegistry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Internal\Chunks\ChunkColumn.h">
@@ -117,6 +120,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Internal\Inventory\Inventory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Internal\Registry\ItemRegistry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
