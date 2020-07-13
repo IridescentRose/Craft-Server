@@ -10,7 +10,7 @@ namespace Minecraft::Server::Internal::Inventory {
 		void init();
 		void cleanup();
 
-		Slot getSlot(uint8_t idx);
+		Slot* getSlot(uint8_t idx);
 
 		void update();
 

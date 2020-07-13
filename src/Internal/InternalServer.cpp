@@ -21,6 +21,7 @@ namespace Minecraft::Server::Internal {
 	{
 		utilityPrint("Starting Internal Server!", LOGGER_LEVEL_INFO);
 		bopen = true;
+		Player::g_Player.currentItemSlot = 0;
 		g_World->init();
 	}
 	void InternalServer::stop()

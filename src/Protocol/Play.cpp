@@ -6,7 +6,6 @@
 #include "Login.h"
 #include <iostream>
 #include <Utilities/UUID.h>
-#include "../Internal/InternalServer.h"
 #if CURRENT_PLATFORM == PLATFORM_PSP
 #include <dirent.h>
 #elif CURRENT_PLATFORM == PLATFORM_WIN
@@ -138,6 +137,7 @@ namespace Minecraft::Server::Protocol {
 
 		uint8_t status = -1;
 		p->buffer->ReadBEUInt8(status);
+		utilityPrint("Dig Type: " + std::to_string(status), LOGGER_LEVEL_DEBUG);
 
 		int64_t pos = -1;
 		p->buffer->ReadBEInt64(pos);
@@ -173,7 +173,18 @@ namespace Minecraft::Server::Protocol {
 
 	int Play::resource_pack_status_handler(PacketIn* p) { utilityPrint("RESOURCE_PACK_STATUS Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::advancement_tab_handler(PacketIn* p) { utilityPrint("ADVANCEMENT_TAB Triggered!", LOGGER_LEVEL_WARN); return 0; }
-	int Play::held_item_change_handler(PacketIn* p) { utilityPrint("HELD_ITEM_CHANGE Triggered!", LOGGER_LEVEL_WARN); return 0; }
+	
+	int Play::held_item_change_handler(PacketIn* p) { 
+
+		uint16_t slot;
+		p->buffer->ReadBEUInt16(slot);
+
+		utilityPrint("Item slot change: " + std::to_string((int)slot), LOGGER_LEVEL_TRACE);
+
+
+		return 0; 
+	}
+	
 	int Play::creative_inventory_action_handler(PacketIn* p) { utilityPrint("CREATIVE_INVENTORY_ACTION Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::update_sign_handler(PacketIn* p) { utilityPrint("UPDATE_SIGN Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	
@@ -184,7 +195,54 @@ namespace Minecraft::Server::Protocol {
 	}
 	
 	int Play::spectate_handler(PacketIn* p) { utilityPrint("SPECTATE Triggered!", LOGGER_LEVEL_WARN); return 0; }
-	int Play::player_block_placement_handler(PacketIn* p) { utilityPrint("PLAYER_BLOCK_PLACEMENT Triggered!", LOGGER_LEVEL_WARN); return 0; }
+	
+	int Play::player_block_placement_handler(PacketIn* p) { 
+		utilityPrint("PLAYER_BLOCK_PLACEMENT Triggered!", LOGGER_LEVEL_WARN); 
+
+		int64_t pos = -1;
+		p->buffer->ReadBEInt64(pos);
+
+		uint32_t BlockXRaw = (pos >> 38) & 0x03ffffff;  // Top 26 bits
+		uint32_t BlockYRaw = (pos >> 26) & 0x0fff;      // Middle 12 bits
+		uint32_t BlockZRaw = (pos & 0x03ffffff);        // Bottom 26 bits
+
+		// If the highest bit in the number's range is set, convert the number into negative:
+		int32_t x = ((BlockXRaw & 0x02000000) == 0) ? static_cast<int>(BlockXRaw) : -(0x04000000 - static_cast<int>(BlockXRaw));
+		int32_t y = ((BlockYRaw & 0x0800) == 0) ? static_cast<int>(BlockYRaw) : -(0x0800 - static_cast<int>(BlockYRaw));
+		int32_t z = ((BlockZRaw & 0x02000000) == 0) ? static_cast<int>(BlockZRaw) : -(0x04000000 - static_cast<int>(BlockZRaw));
+
+		utilityPrint("POS: " + std::to_string((int)x) + " " + std::to_string((int)y) + " " + std::to_string((int)z), LOGGER_LEVEL_TRACE);
+
+		uint8_t face = -1;
+		p->buffer->ReadBEUInt8(face);
+		utilityPrint("FACE: " + std::to_string((int)face), LOGGER_LEVEL_TRACE);
+
+		uint8_t hand = -1;
+		p->buffer->ReadBEUInt8(hand);
+		utilityPrint("HAND: " + std::to_string((int)hand), LOGGER_LEVEL_TRACE);
+
+		float cx, cy, cz;
+		p->buffer->ReadBEFloat(cx);
+		p->buffer->ReadBEFloat(cy);
+		p->buffer->ReadBEFloat(cz);
+		utilityPrint("CUR: " + std::to_string(cx) + " " + std::to_string(cy) + " " + std::to_string(cz), LOGGER_LEVEL_TRACE);
+
+		//Subtract from items
+		Internal::Inventory::Slot* slot = Internal::g_World->inventory.getSlot(Internal::Player::g_Player.currentItemSlot + 36); //Offset to hotbar
+		slot->item_count--;
+
+		if(slot->item_count == 0){
+			slot->present = false;
+		}
+
+		PacketsOut::send_set_slot(0, Internal::Player::g_Player.currentItemSlot + 36, slot);
+
+		//Block change / replace / place thingy
+		
+
+		return 0; 
+	}
+	
 	int Play::use_item_handler(PacketIn* p) { utilityPrint("USE_ITEM Triggered!", LOGGER_LEVEL_WARN); return 0; }
 }
 
@@ -866,12 +924,12 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_initial_inventory()
 	p->buffer->WriteBEUInt16(46);
 
 	for (int i = 0; i < 46; i++) {
-		Internal::Inventory::Slot slt = Internal::g_World->inventory.getSlot(i);
+		Internal::Inventory::Slot* slt = Internal::g_World->inventory.getSlot(i);
 
-		p->buffer->WriteBool(slt.present);
-		if (slt.present) {
-			p->buffer->WriteVarInt32(slt.id);
-			p->buffer->WriteBEUInt8(slt.item_count);
+		p->buffer->WriteBool(slt->present);
+		if (slt->present) {
+			p->buffer->WriteVarInt32(slt->id);
+			p->buffer->WriteBEUInt8(slt->item_count);
 
 			//TODO: ADD NBT DATA
 			p->buffer->WriteBEUInt8(0);
@@ -881,6 +939,24 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_initial_inventory()
 
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_set_slot(uint8_t id, uint16_t num, Internal::Inventory::Slot* slt)
+{
+	PacketOut* p = new PacketOut(64);
+	p->ID = 0x17;
+
+	p->buffer->WriteBEUInt8(id);
+	p->buffer->WriteBEUInt16(num);
+	p->buffer->WriteBool(slt->present);
+	
+	if(slt->present){
+		p->buffer->WriteVarInt32(slt->id);
+		p->buffer->WriteBEUInt8(slt->item_count);
+
+		//TODO: ADD NBT DATA
+		p->buffer->WriteBEUInt8(0);
+	}
 }
 
 int Minecraft::Server::Protocol::Play::edit_book_handler(PacketIn* p) { utilityPrint("UNHANDLED PACKET: " + std::to_string((int)p->ID), LOGGER_LEVEL_WARN); return 0; }

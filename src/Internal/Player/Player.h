@@ -11,6 +11,8 @@ namespace Minecraft::Server::Internal::Player {
 		double x, y, z;
 		float yaw, pitch;
 		bool onGround;
+
+		int currentItemSlot;
 	};
 
 	extern Player g_Player;

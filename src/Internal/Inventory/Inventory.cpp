@@ -6,7 +6,7 @@ namespace Minecraft::Server::Internal::Inventory {
 	Inventory::Inventory()
 	{
 		for (int i = 0; i < 46; i++) {
-			inventorySpots[i] = { false, (uint32_t)-1, (uint8_t)-1, nullptr };
+			inventorySpots[i] = { false, (uint32_t)0, (uint8_t)0, nullptr };
 		}
 	}
 	Inventory::~Inventory()
@@ -26,13 +26,13 @@ namespace Minecraft::Server::Internal::Inventory {
 			inventorySpots[i] = { false, (uint32_t)-1, (uint8_t)-1, nullptr };
 		}
 	}
-	Slot Inventory::getSlot(uint8_t idx)
+	Slot* Inventory::getSlot(uint8_t idx)
 	{
 		if (idx < 46) {
-			return inventorySpots[idx];
+			return &inventorySpots[idx];
 		}
 		else {
-			return Slot();
+			return NULL;
 		}
 	}
 

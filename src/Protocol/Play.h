@@ -3,6 +3,9 @@
 #include <Events/Events.h>
 #include <Utilities/JSON.h>
 #include "../Internal/Chunks/ChunkColumn.h"
+#include "../Internal/Inventory/Inventory.h"
+#include "../Internal/Player/Player.h"
+#include "../Internal/InternalServer.h"
 
 #include <Network/NetworkTypes.h>
 using namespace Stardust::Events;
@@ -125,6 +128,7 @@ namespace Minecraft::Server::Protocol {
 			void send_unload_chunk(int x, int z);
 			void send_initial_inventory();
 
+			void send_set_slot(uint8_t id, uint16_t num, Internal::Inventory::Slot* slt);
 		}
 
 		namespace PacketEvents {
