@@ -157,11 +157,23 @@ namespace Minecraft::Server::Protocol {
 
 		if (status == 0) {
 			//Player started digging. We do need to check for instabreak blocks...
+			BlockID id = Internal::g_World->getBlockAtLocationAbsolute(x, y, z);
+			std::cout << id << std::endl;
+
+			//Replace with registry data checker!
+			if(id == 1041){
+				Internal::g_World->setBlockAtLocationAbsolute(x, y, z, 0); //Set to air
+
+				//Trigger block break events
+			}
+
 
 		}
 		else if (status == 2) {
 			//Player broke a full block.
+			Internal::g_World->setBlockAtLocationAbsolute(x, y, z, 0); //Set to air
 
+			//Trigger block break events
 		}
 
 		return 0; 
@@ -227,18 +239,80 @@ namespace Minecraft::Server::Protocol {
 		p->buffer->ReadBEFloat(cz);
 		utilityPrint("CUR: " + std::to_string(cx) + " " + std::to_string(cy) + " " + std::to_string(cz), LOGGER_LEVEL_TRACE);
 
-		//Subtract from items
 		Internal::Inventory::Slot* slot = Internal::g_World->inventory.getSlot(Internal::Player::g_Player.currentItemSlot + 36); //Offset to hotbar
-		slot->item_count--;
-
-		if(slot->item_count == 0){
-			slot->present = false;
-		}
-
-		PacketsOut::send_set_slot(0, Internal::Player::g_Player.currentItemSlot + 36, slot);
 
 		//Block change / replace / place thingy
+		BlockID id = Internal::g_World->getBlockAtLocationAbsolute(x, y, z);
+		std::cout << slot->item_count << std::endl;
 		
+		if (slot->present && slot->id > 0 && slot->item_count > 0) {
+
+
+
+			//Replace with registry checker
+			if (id == 1041) {
+				//Replace no matter what
+
+				//Actually make a translator from item ID to block ID (use namespaces!)
+				BlockID translateID = 3984;
+
+				Internal::g_World->setBlockAtLocationAbsolute(x, y, z, translateID);
+			}
+			else {
+				//Place on side of solid block (use face ids)
+				int xoff, yoff, zoff;
+				xoff = yoff = zoff = 0;
+
+				switch (face) {
+				case 0: {
+					yoff--;
+					break;
+				}
+
+				case 1: {
+					yoff++;
+					break;
+				}
+
+				case 2: {
+					zoff--;
+					break;
+				}
+
+				case 3: {
+					zoff++;
+					break;
+				}
+
+				case 4: {
+					xoff--;
+					break;
+				}
+
+				case 5: {
+					xoff++;
+					break;
+				}
+
+				}
+
+				//Actually make a translator from item ID to block ID (use namespaces!)
+				BlockID translateID = 3984;
+
+				Internal::g_World->setBlockAtLocationAbsolute(x + xoff, y + yoff, z + zoff, translateID);
+			}
+
+
+			//Subtract from items
+			slot->item_count--;
+
+			if (slot->item_count == 0) {
+				slot->id = 0;
+				slot->present = false;
+			}
+
+			PacketsOut::send_set_slot(0, Internal::Player::g_Player.currentItemSlot + 36, slot);
+		}
 
 		return 0; 
 	}
@@ -957,6 +1031,23 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_set_slot(uint8_t id, ui
 		//TODO: ADD NBT DATA
 		p->buffer->WriteBEUInt8(0);
 	}
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_change_block(int x, int y, int z, BlockID id)
+{
+	PacketOut* p = new PacketOut(64);
+	p->ID = 0x0B;
+
+	p->buffer->WriteBEInt64((static_cast<int64_t>(x & 0x3FFFFFF) << 38) |
+		(static_cast<int64_t>(y & 0xFFF) << 26) |
+		(static_cast<int64_t>(z & 0x3FFFFFF)));
+	p->buffer->WriteVarInt32(id);
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
 }
 
 int Minecraft::Server::Protocol::Play::edit_book_handler(PacketIn* p) { utilityPrint("UNHANDLED PACKET: " + std::to_string((int)p->ID), LOGGER_LEVEL_WARN); return 0; }

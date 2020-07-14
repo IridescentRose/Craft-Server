@@ -178,6 +178,7 @@
     <ClCompile Include="src\Utilities\Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Internal\Blocks\BlockData.h" />
     <ClInclude Include="src\Internal\Chunks\ChunkColumn.h" />
     <ClInclude Include="src\Internal\Chunks\ChunkDefines.h" />
     <ClInclude Include="src\Internal\Chunks\ChunkSection.h" />

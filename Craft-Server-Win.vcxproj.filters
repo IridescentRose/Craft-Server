@@ -125,5 +125,8 @@
     <ClInclude Include="src\Internal\Registry\ItemRegistry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Internal\Blocks\BlockData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

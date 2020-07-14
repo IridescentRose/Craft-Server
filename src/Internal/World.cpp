@@ -107,5 +107,75 @@ namespace Minecraft::Server::Internal{
 
 	}
 
+	BlockID World::getBlockAtLocationAbsolute(int x, int y, int z)
+	{
+		int cX = x / 16;
+		int cZ = z / 16;
+
+		int corrX = x;
+		int corrZ = z;
+
+		if (x < 0) {
+			corrX = 16 - x;
+		}
+
+		if (z < 0) {
+			corrZ = 16 - z;
+		}
+
+		return getBlockAtLocationRelative(cX, cZ, corrX % 16, y, corrZ % 16);
+	}
+
+	BlockID World::getBlockAtLocationRelative(int chunkX, int chunkY, int x, int y, int z)
+	{
+		ChunkSection* section = chunkMap[mc::Vector3i(chunkX, chunkY)]->getSection(y / 16);
+		if(section == NULL){
+			return 0; //Doesn't exist
+		}else{
+			return section->getBlockAt(x, y % 16, z);
+		}
+	}
+
+	void World::setBlockAtLocationAbsolute(int x, int y, int z, BlockID block)
+	{
+		int cX = x / 16;
+		int cZ = z / 16;
+
+		int corrX = x;
+		int corrZ = z;
+
+		if (x < 0) {
+			corrX = 16 - x;
+		}
+
+		if (z < 0) {
+			corrZ = 16 - z;
+		}
+
+		setBlockAtLocationRelative(cX, cZ, corrX % 16, y, corrZ % 16, block);
+		utilityPrint("Set block ID at: " + std::to_string(x) + " " + std::to_string(y) + " " + std::to_string(z) + " to " + std::to_string((int)block), LOGGER_LEVEL_TRACE);
+
+
+		//Send block update packet
+		Protocol::Play::PacketsOut::send_change_block(x, y, z, block);
+	}
+
+	void World::setBlockAtLocationRelative(int chunkX, int chunkY, int x, int y, int z, BlockID block)
+	{
+		ChunkSection* section = chunkMap[mc::Vector3i(chunkX, chunkY)]->getSection(y / 16);
+		if (section == NULL) {
+			//Doesn't exist, do nothing - note: may need to check where we are.
+			chunkMap[mc::Vector3i(chunkX, chunkY)]->addSection(new ChunkSection(y / 16));
+			section = chunkMap[mc::Vector3i(chunkX, chunkY)]->getSection(y / 16);
+		}
+		int pos = ((((y % 16 )* 16) + z) * 16) + x;
+		section->blocks[pos] = block;
+
+		//Generate save data
+
+		//Trigger block updates probably too
+
+	}
+
 	World* g_World = NULL;
 }

@@ -22,7 +22,11 @@ namespace Minecraft::Server::Internal {
 		void chunkgenUpdate();
 
 		//TODO: GET BLOCK GLOBAL
+		BlockID getBlockAtLocationAbsolute(int x, int y, int z);
+		BlockID getBlockAtLocationRelative(int chunkX, int chunkY, int x, int y, int z);
 		//TODO: SET BLOCK GLOBAL
+		void setBlockAtLocationAbsolute(int x, int y, int z, BlockID block);
+		void setBlockAtLocationRelative(int chunkX, int chunkY, int x, int y, int z, BlockID block);
 
 		Entity::EntityManager entityManager;
 		Inventory::Inventory inventory;

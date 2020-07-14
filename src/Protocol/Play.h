@@ -129,6 +129,7 @@ namespace Minecraft::Server::Protocol {
 			void send_initial_inventory();
 
 			void send_set_slot(uint8_t id, uint16_t num, Internal::Inventory::Slot* slt);
+			void send_change_block(int x, int y, int z, BlockID id);
 		}
 
 		namespace PacketEvents {
