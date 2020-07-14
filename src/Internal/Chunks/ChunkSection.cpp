@@ -1,6 +1,7 @@
 #include "ChunkSection.h"
 #include <malloc.h>
 #include <fstream>
+#include <Utilities/Logger.h>
 #include <iostream>
 namespace Minecraft::Server::Internal::Chunks {
 	ChunkSection::ChunkSection(int y)
