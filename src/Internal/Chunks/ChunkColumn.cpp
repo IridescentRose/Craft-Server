@@ -1,10 +1,13 @@
 #include "ChunkColumn.h"
+#include <iostream>
 
 namespace Minecraft::Server::Internal::Chunks {
 	ChunkColumn::ChunkColumn(int x, int z)
 	{
 		cX = x;
 		cZ = z;
+		std::cout << "CHUNK CREATED " << x << " " << z << std::endl;
+
 		sections.clear();
 
 		for (int xx = 0; xx < CHUNK_SECTION_LENGTH; xx++) {
@@ -17,6 +20,7 @@ namespace Minecraft::Server::Internal::Chunks {
 	ChunkColumn::~ChunkColumn()
 	{
 		for (auto chnk : sections) {
+			chnk->saveChanges();
 			delete chnk;
 		}
 	}
@@ -33,6 +37,11 @@ namespace Minecraft::Server::Internal::Chunks {
 
 	void ChunkColumn::addSection(ChunkSection* chnks)
 	{
+		chnks->cX = cX;
+		chnks->cZ = cZ;
+
+		chnks->loadChanges();
+
 		sections.push_back(chnks);
 	}
 

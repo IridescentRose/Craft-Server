@@ -1,10 +1,13 @@
 #include "ChunkSection.h"
 #include <malloc.h>
+#include <fstream>
+#include <iostream>
 namespace Minecraft::Server::Internal::Chunks {
 	ChunkSection::ChunkSection(int y)
 	{
 		empty = true;
 		cY = y;
+		blocksChanged.clear();
 
 		blocks = (BlockID*)malloc(8192);
 	}
@@ -70,5 +73,53 @@ namespace Minecraft::Server::Internal::Chunks {
 		}
 
 
+	}
+	void ChunkSection::changeBlock(int x, int y, int z, BlockID id)
+	{
+		int pos = ((((y % 16) * 16) + z) * 16) + x;
+		blocks[pos] = id;
+
+		//Trigger block updates
+
+		//Save data entry.
+
+		if(blocksChanged.find(mc::Vector3i(x, y, z)) != blocksChanged.end()){
+			//It exists, modify it.
+			blocksChanged[mc::Vector3i(x, y, z)] = id;
+		}else{
+			blocksChanged.emplace(mc::Vector3i(x, y, z), id);
+			std::cout << "world/chunks/" + std::to_string(cX) + " " + std::to_string(cY) + " " + std::to_string(cZ) + ".chk" << std::endl;
+		}
+	}
+	void ChunkSection::saveChanges()
+	{
+		if (blocksChanged.size() > 0) {
+			std::ofstream file("world/chunks/" + std::to_string(cX) + " " + std::to_string(cY) + " " + std::to_string(cZ) + ".chk");
+			std::cout << "world/chunks/" + std::to_string(cX) + " " + std::to_string(cY) + " " + std::to_string(cZ) + ".chk" << std::endl;
+
+			for (auto& [v, id] : blocksChanged) {
+				file << v.x << " " << v.y << " " << v.z << " " << " " << id << std::endl;
+			}
+
+			file.close();
+		}
+	}
+
+	void ChunkSection::loadChanges()
+	{
+		std::ifstream file("world/chunks/" + std::to_string(cX) + " " + std::to_string(cY) + " " + std::to_string(cZ) + ".chk");
+		if(file.is_open()){
+			mc::Vector3i v;
+			while(file >> v.x){
+				file >> v.y;
+				file >> v.z;
+				BlockID id;
+				file >> id;
+
+				blocksChanged.emplace(v, id);
+				int pos = ((((v.y % 16) * 16) + v.z) * 16) + v.x;
+				blocks[pos] = id;
+			}
+		}
 	}
 }

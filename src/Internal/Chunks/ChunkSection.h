@@ -1,5 +1,7 @@
 #pragma once
 #include "ChunkDefines.h"
+#include <mclib/common/Vector.h>
+#include <map>
 
 namespace Minecraft::Server::Internal::Chunks {
 	class ChunkSection {
@@ -19,9 +21,18 @@ namespace Minecraft::Server::Internal::Chunks {
 			return cY;
 		}
 
+		void changeBlock(int x, int y, int z, BlockID);
+
+		void saveChanges();
+		void loadChanges();
+
 		BlockID *blocks;
+		int cX, cZ;
 	private:
 		bool empty;
 		int cY;
+
+
+		std::map<mc::Vector3i, BlockID> blocksChanged;
 	};
 }

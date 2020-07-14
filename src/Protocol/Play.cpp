@@ -433,9 +433,9 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_player_position_look()
 	//TODO: Initial Spawn - create a generic
 	PacketOut* p = new PacketOut(64);
 	p->ID = 0x32;
-	p->buffer->WriteBEDouble(0); //X
+	p->buffer->WriteBEDouble(32768); //X
 	p->buffer->WriteBEDouble(96); //Y
-	p->buffer->WriteBEDouble(0); //Z
+	p->buffer->WriteBEDouble(32768); //Z
 	p->buffer->WriteBEFloat(0); //Yaw
 	p->buffer->WriteBEFloat(0); //Pitch
 

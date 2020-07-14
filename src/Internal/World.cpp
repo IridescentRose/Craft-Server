@@ -32,7 +32,6 @@ namespace Minecraft::Server::Internal{
 			for (auto& [pos, chunk] : chunkMap) {
 				if (chunk != nullptr) {
 					delete chunk;
-					chunk = nullptr;
 				}
 				chunkMap.erase(pos);
 			}
@@ -168,13 +167,8 @@ namespace Minecraft::Server::Internal{
 			chunkMap[mc::Vector3i(chunkX, chunkY)]->addSection(new ChunkSection(y / 16));
 			section = chunkMap[mc::Vector3i(chunkX, chunkY)]->getSection(y / 16);
 		}
-		int pos = ((((y % 16 )* 16) + z) * 16) + x;
-		section->blocks[pos] = block;
 
-		//Generate save data
-
-		//Trigger block updates probably too
-
+		section->changeBlock(x, y, z, block);
 	}
 
 	World* g_World = NULL;
