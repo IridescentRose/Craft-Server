@@ -208,6 +208,17 @@ namespace Minecraft::Server::Protocol {
 	
 	int Play::spectate_handler(PacketIn* p) { utilityPrint("SPECTATE Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	
+	bool playerBoundsCheck(int x, int y, int z){
+		if (x + 0.5 < Internal::Player::g_Player.x + 0.5 && x + 0.5 > Internal::Player::g_Player.x - 0.5) {
+			if (z + 0.5 < Internal::Player::g_Player.z + 0.5 && z + 0.5 > Internal::Player::g_Player.z - 0.5) {
+				if (y + 0.5 > Internal::Player::g_Player.y && y + 0.5 < Internal::Player::g_Player.y + 2) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
 	int Play::player_block_placement_handler(PacketIn* p) { 
 		utilityPrint("PLAYER_BLOCK_PLACEMENT Triggered!", LOGGER_LEVEL_WARN); 
 
@@ -247,71 +258,89 @@ namespace Minecraft::Server::Protocol {
 		
 		if (slot->present && slot->id > 0 && slot->item_count > 0) {
 
+			if(playerBoundsCheck(x, y, z)){
+				
+				//Replace with registry checker
+				if (id == 1041) {
+					//Replace no matter what
+
+					//Actually make a translator from item ID to block ID (use namespaces!)
+					BlockID translateID = 3984;
+
+					Internal::g_World->setBlockAtLocationAbsolute(x, y, z, translateID);
 
 
-			//Replace with registry checker
-			if (id == 1041) {
-				//Replace no matter what
+					//Subtract from items
+					slot->item_count--;
 
-				//Actually make a translator from item ID to block ID (use namespaces!)
-				BlockID translateID = 3984;
+					if (slot->item_count == 0) {
+						slot->id = 0;
+						slot->present = false;
+					}
 
-				Internal::g_World->setBlockAtLocationAbsolute(x, y, z, translateID);
+					PacketsOut::send_set_slot(0, Internal::Player::g_Player.currentItemSlot + 36, slot);
+				}
+				else {
+					//Place on side of solid block (use face ids)
+					int xoff, yoff, zoff;
+					xoff = yoff = zoff = 0;
+
+					switch (face) {
+					case 0: {
+						yoff--;
+						break;
+					}
+
+					case 1: {
+						yoff++;
+						break;
+					}
+
+					case 2: {
+						zoff--;
+						break;
+					}
+
+					case 3: {
+						zoff++;
+						break;
+					}
+
+					case 4: {
+						xoff--;
+						break;
+					}
+
+					case 5: {
+						xoff++;
+						break;
+					}
+
+					}
+
+					if (playerBoundsCheck(x + xoff, y + yoff, z + zoff)) {
+
+						//Actually make a translator from item ID to block ID (use namespaces!)
+						BlockID translateID = 3984;
+
+						Internal::g_World->setBlockAtLocationAbsolute(x + xoff, y + yoff, z + zoff, translateID);
+
+
+						//Subtract from items
+						slot->item_count--;
+
+						if (slot->item_count == 0) {
+							slot->id = 0;
+							slot->present = false;
+						}
+
+						PacketsOut::send_set_slot(0, Internal::Player::g_Player.currentItemSlot + 36, slot);
+					}
+				}
+
+
 			}
-			else {
-				//Place on side of solid block (use face ids)
-				int xoff, yoff, zoff;
-				xoff = yoff = zoff = 0;
 
-				switch (face) {
-				case 0: {
-					yoff--;
-					break;
-				}
-
-				case 1: {
-					yoff++;
-					break;
-				}
-
-				case 2: {
-					zoff--;
-					break;
-				}
-
-				case 3: {
-					zoff++;
-					break;
-				}
-
-				case 4: {
-					xoff--;
-					break;
-				}
-
-				case 5: {
-					xoff++;
-					break;
-				}
-
-				}
-
-				//Actually make a translator from item ID to block ID (use namespaces!)
-				BlockID translateID = 3984;
-
-				Internal::g_World->setBlockAtLocationAbsolute(x + xoff, y + yoff, z + zoff, translateID);
-			}
-
-
-			//Subtract from items
-			slot->item_count--;
-
-			if (slot->item_count == 0) {
-				slot->id = 0;
-				slot->present = false;
-			}
-
-			PacketsOut::send_set_slot(0, Internal::Player::g_Player.currentItemSlot + 36, slot);
 		}
 
 		return 0; 
