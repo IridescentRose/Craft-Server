@@ -238,7 +238,6 @@ namespace Minecraft::Server::Protocol {
 
 		uint8_t face = -1;
 		p->buffer->ReadBEUInt8(face);
-		utilityPrint("FACE: " + std::to_string((int)face), LOGGER_LEVEL_TRACE);
 
 		uint8_t hand = -1;
 		p->buffer->ReadBEUInt8(hand);

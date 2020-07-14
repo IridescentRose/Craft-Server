@@ -88,14 +88,12 @@ namespace Minecraft::Server::Internal::Chunks {
 			blocksChanged[mc::Vector3i(x, y, z)] = id;
 		}else{
 			blocksChanged.emplace(mc::Vector3i(x, y, z), id);
-			std::cout << "world/chunks/" + std::to_string(cX) + " " + std::to_string(cY) + " " + std::to_string(cZ) + ".chk" << std::endl;
 		}
 	}
 	void ChunkSection::saveChanges()
 	{
 		if (blocksChanged.size() > 0) {
 			std::ofstream file("world/chunks/" + std::to_string(cX) + " " + std::to_string(cY) + " " + std::to_string(cZ) + ".chk");
-			std::cout << "world/chunks/" + std::to_string(cX) + " " + std::to_string(cY) + " " + std::to_string(cZ) + ".chk" << std::endl;
 
 			for (auto& [v, id] : blocksChanged) {
 				file << v.x << " " << v.y << " " << v.z << " " << " " << id << std::endl;

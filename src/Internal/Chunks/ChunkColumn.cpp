@@ -6,8 +6,7 @@ namespace Minecraft::Server::Internal::Chunks {
 	{
 		cX = x;
 		cZ = z;
-		std::cout << "CHUNK CREATED " << x << " " << z << std::endl;
-
+		
 		sections.clear();
 
 		for (int xx = 0; xx < CHUNK_SECTION_LENGTH; xx++) {

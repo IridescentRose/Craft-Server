@@ -14,14 +14,30 @@ namespace Minecraft::Server::Internal::Inventory {
 	}
 	void Inventory::init()
 	{
-		Json::Value vv = Stardust::Utilities::JSON::openJSON("./test.json");
+		std::ifstream file("world/inventory.dat");
 
-		for (int i = 0; i < 9; i++) {
-			inventorySpots[36 + i] = { true, (uint32_t)Registry::g_ItemRegistry->getIDByName(vv["item-id"].asString()), (uint8_t)64, nullptr };
+		if(file.is_open()){
+			for(int i = 0; i < 46; i++){
+				int id, item_count;
+				bool present;
+
+				file >> present;
+				file >> id;
+				file >> item_count;
+
+				inventorySpots[i] = { present, (uint32_t)id, (uint8_t)item_count, nullptr };
+			}
 		}
 	}
 	void Inventory::cleanup()
 	{
+		std::ofstream file("world/inventory.dat");
+		
+
+		for (int i = 0; i < 46; i++) {
+			file << (int)inventorySpots[i].present << " " << (int)inventorySpots[i].id << " " << (int)inventorySpots[i].item_count << " " << std::endl;
+		}
+
 		for (int i = 0; i < 46; i++) {
 			inventorySpots[i] = { false, (uint32_t)-1, (uint8_t)-1, nullptr };
 		}
