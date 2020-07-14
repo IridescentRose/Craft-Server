@@ -14,12 +14,27 @@ namespace Minecraft::Server::Internal{
 	void World::init()
 	{
 		chunkMap.clear();
+		chunkModMap.clear();
 		lastPos = { -1000, -1000 };
 
 		entityManager.init();
 		inventory.init();
 
 		Protocol::Play::PacketsOut::send_initial_inventory();
+
+		std::ifstream cmfa("./world/level.dat");
+
+		//Load up map of chunks modified
+		mc::Vector3i v;
+		int mod = 1;
+		while(cmfa >> v.x){
+			cmfa >> v.y;
+			cmfa >> v.z;
+
+			chunkModMap.emplace(v, mod);
+		}
+
+		chunkModifiedArray = std::ofstream("./world/level.dat");
 	}
 
 	void World::cleanup()
@@ -40,6 +55,8 @@ namespace Minecraft::Server::Internal{
 			chunkMap.clear();
 
 		}
+
+		chunkModifiedArray.close();
 	}
 
 	void World::tickUpdate()
@@ -95,6 +112,13 @@ namespace Minecraft::Server::Internal{
 					ChunkColumn* chunk = new ChunkColumn(chk.x, chk.y);
 
 					for (int i = 0; i < 16; i++) {
+						
+
+						if(i > 4){
+							if(chunkModMap.find(mc::Vector3i(chk.x, i, chk.y)) == chunkModMap.end()){
+								continue;
+							}
+						}
 						ChunkSection* chks = new ChunkSection(i);
 						chks->generateTestData();
 						chunk->addSection(chks);

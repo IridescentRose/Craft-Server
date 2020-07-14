@@ -7,6 +7,7 @@
 #include "Entity/EntityManager.h"
 #include "Inventory/Inventory.h"
 #include <mclib/common/Vector.h>
+#include <fstream>
 using namespace Minecraft::Server::Internal::Chunks;
 
 namespace Minecraft::Server::Internal {
@@ -32,7 +33,9 @@ namespace Minecraft::Server::Internal {
 		Inventory::Inventory inventory;
 
 		glm::ivec2 lastPos;
+		std::ofstream chunkModifiedArray;
 		std::map<mc::Vector3i, ChunkColumn*> chunkMap;
+		std::map<mc::Vector3i, int> chunkModMap;
 	private:
 
 	};

@@ -2,6 +2,7 @@
 #include <malloc.h>
 #include <fstream>
 #include <Utilities/Logger.h>
+#include "../World.h"
 #include <iostream>
 namespace Minecraft::Server::Internal::Chunks {
 	ChunkSection::ChunkSection(int y)
@@ -99,8 +100,11 @@ namespace Minecraft::Server::Internal::Chunks {
 	}
 	void ChunkSection::saveChanges()
 	{
+		
 		if (blocksChanged.size() > 0) {
 			std::ofstream file("world/chunks/" + std::to_string(cX) + " " + std::to_string(cY) + " " + std::to_string(cZ) + ".chk");
+			g_World->chunkModifiedArray << cX << " " << cY << " " << cZ << std::endl;
+			g_World->chunkModMap.emplace(mc::Vector3i(cX, cY, cZ), 1);
 
 			for (auto& [v, id] : blocksChanged) {
 				file << v.x << " " << v.y << " " << v.z << " " << " " << id << std::endl;
