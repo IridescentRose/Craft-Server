@@ -26,6 +26,7 @@ namespace Minecraft::Server::Internal {
 	}
 	void InternalServer::stop()
 	{
+		
 		bopen = false;
 
 		g_World->cleanup();

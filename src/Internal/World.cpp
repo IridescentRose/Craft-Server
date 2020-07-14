@@ -2,7 +2,7 @@
 
 #include "../Utilities/Utils.h"
 #include "../Protocol/Play.h"
-
+#include <iostream>
 namespace Minecraft::Server::Internal{
 	World::World()
 	{
@@ -27,14 +27,18 @@ namespace Minecraft::Server::Internal{
 		inventory.cleanup();
 		entityManager.cleanup();
 		
+		{
+			std::ofstream player("world/player.dat");
+			player << Player::g_Player.x - 0.5f  << " " << Player::g_Player.y - 0.5f << " " << Player::g_Player.z - 0.5f << " " << Player::g_Player.yaw << " " << Player::g_Player.pitch << std::endl;
+			player.close();
+		}
 
 		if (chunkMap.size() > 0) {
-			for (auto& [pos, chunk] : chunkMap) {
-				if (chunk != nullptr) {
-					delete chunk;
-				}
-				chunkMap.erase(pos);
+			for(auto& [v, c] : chunkMap){
+				delete c;
 			}
+			chunkMap.clear();
+
 		}
 	}
 
@@ -90,7 +94,7 @@ namespace Minecraft::Server::Internal{
 				if (chunkMap.find(chk) == chunkMap.end()) {
 					ChunkColumn* chunk = new ChunkColumn(chk.x, chk.y);
 
-					for (int i = 0; i < 5; i++) {
+					for (int i = 0; i < 16; i++) {
 						ChunkSection* chks = new ChunkSection(i);
 						chks->generateTestData();
 						chunk->addSection(chks);
@@ -164,7 +168,11 @@ namespace Minecraft::Server::Internal{
 		ChunkSection* section = chunkMap[mc::Vector3i(chunkX, chunkY)]->getSection(y / 16);
 		if (section == NULL) {
 			//Doesn't exist, do nothing - note: may need to check where we are.
-			chunkMap[mc::Vector3i(chunkX, chunkY)]->addSection(new ChunkSection(y / 16));
+			ChunkSection* sect = new ChunkSection(y / 16);
+			
+			sect->empty = false;
+
+			chunkMap[mc::Vector3i(chunkX, chunkY)]->addSection(sect);
 			section = chunkMap[mc::Vector3i(chunkX, chunkY)]->getSection(y / 16);
 		}
 

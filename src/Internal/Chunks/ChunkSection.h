@@ -28,8 +28,8 @@ namespace Minecraft::Server::Internal::Chunks {
 
 		BlockID *blocks;
 		int cX, cZ;
-	private:
 		bool empty;
+	private:
 		int cY;
 
 

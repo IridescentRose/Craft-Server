@@ -41,11 +41,20 @@ namespace Minecraft::Server::Internal::Chunks {
 
 		chnks->loadChanges();
 
-		sections.push_back(chnks);
+		if(chnks->isEmpty()){
+			delete chnks;
+		}else{
+			sections.push_back(chnks);
+		}
+
 	}
 
 	void ChunkColumn::clearSections()
 	{
+		for (auto chnk : sections) {
+			chnk->saveChanges();
+			delete chnk;
+		}
 		sections.clear();
 	}
 

@@ -193,7 +193,7 @@ namespace Minecraft::Server::Protocol {
 
 		utilityPrint("Item slot change: " + std::to_string((int)slot), LOGGER_LEVEL_TRACE);
 
-
+		Internal::Player::g_Player.currentItemSlot = slot;
 		return 0; 
 	}
 	
@@ -253,8 +253,7 @@ namespace Minecraft::Server::Protocol {
 
 		//Block change / replace / place thingy
 		BlockID id = Internal::g_World->getBlockAtLocationAbsolute(x, y, z);
-		std::cout << slot->item_count << std::endl;
-		
+
 		if (slot->present && slot->id > 0 && slot->item_count > 0) {
 
 			if(playerBoundsCheck(x, y, z)){
@@ -429,14 +428,27 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_player_info()
 
 void Minecraft::Server::Protocol::Play::PacketsOut::send_player_position_look()
 {
+	Internal::Player::g_Player.x = 32768;
+	Internal::Player::g_Player.y = 96;
+	Internal::Player::g_Player.z = 32768;
+
+	std::ifstream player("world/player.dat");
+	if (player.is_open()) {
+		player >> Internal::Player::g_Player.x >> Internal::Player::g_Player.y >> Internal::Player::g_Player.z >> Internal::Player::g_Player.yaw >> Internal::Player::g_Player.pitch;
+	}
+
+	Internal::Player::g_Player.x += 0.5f;
+	Internal::Player::g_Player.y += 0.5f;
+	Internal::Player::g_Player.z += 0.5f;
+
 	//TODO: Initial Spawn - create a generic
 	PacketOut* p = new PacketOut(64);
 	p->ID = 0x32;
-	p->buffer->WriteBEDouble(32768); //X
-	p->buffer->WriteBEDouble(96); //Y
-	p->buffer->WriteBEDouble(32768); //Z
-	p->buffer->WriteBEFloat(0); //Yaw
-	p->buffer->WriteBEFloat(0); //Pitch
+	p->buffer->WriteBEDouble(Internal::Player::g_Player.x); //X
+	p->buffer->WriteBEDouble(Internal::Player::g_Player.y); //Y
+	p->buffer->WriteBEDouble(Internal::Player::g_Player.z); //Z
+	p->buffer->WriteBEFloat(Internal::Player::g_Player.yaw); //Yaw
+	p->buffer->WriteBEFloat(Internal::Player::g_Player.pitch); //Pitch
 
 	p->buffer->WriteBEUInt8(0);
 	p->buffer->WriteBEUInt8(1);//TP ID

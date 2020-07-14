@@ -39,7 +39,7 @@ namespace Minecraft::Server::Internal::Chunks {
 
 	void ChunkSection::generateTestData()
 	{
-		empty = false;
+
 		for (int x = 0; x < CHUNK_SECTION_LENGTH; x++) {
 			for (int y = 0; y < CHUNK_SECTION_LENGTH; y++) {
 				for (int z = 0; z < CHUNK_SECTION_LENGTH; z++) {
@@ -50,19 +50,24 @@ namespace Minecraft::Server::Internal::Chunks {
 
 					if (rY == 0) {
 						blocks[idx] = 33;
+						empty = false;
 					}
 					else if (rY < 63) {
 						blocks[idx] = 1;
+						empty = false;
 					}
 					else if (rY >= 63 && rY < 66) {
 						blocks[idx] = 10;
+						empty = false;
 					}
 					else if (rY == 66) {
 						blocks[idx] = 9;
+						empty = false;
 					}
 					else {
 						if ((x + z - rY)*3 % 2 == 0 && rY == 67) {
 							blocks[idx] = 1041;
+							empty = false;
 						}
 						else {
 							blocks[idx] = 0;
@@ -83,6 +88,7 @@ namespace Minecraft::Server::Internal::Chunks {
 
 		//Save data entry.
 
+		
 		if(blocksChanged.find(mc::Vector3i(x, y, z)) != blocksChanged.end()){
 			//It exists, modify it.
 			blocksChanged[mc::Vector3i(x, y, z)] = id;
@@ -109,6 +115,7 @@ namespace Minecraft::Server::Internal::Chunks {
 		if(file.is_open()){
 			mc::Vector3i v;
 			while(file >> v.x){
+				empty = false;
 				file >> v.y;
 				file >> v.z;
 				BlockID id;
