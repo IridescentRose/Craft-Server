@@ -4,6 +4,8 @@
 #include <Utilities/JSON.h>
 #include "../Utilities/Config.h"
 #include "Login.h"
+#include "../Internal/Registry/ItemRegistry.h"
+#include "../Internal/Registry/BlockRegistry.h"
 #include <iostream>
 #include <Utilities/UUID.h>
 #if CURRENT_PLATFORM == PLATFORM_PSP
@@ -263,8 +265,7 @@ namespace Minecraft::Server::Protocol {
 					//Replace no matter what
 
 					//Actually make a translator from item ID to block ID (use namespaces!)
-					BlockID translateID = 3984;
-
+					BlockID translateID = Internal::Registry::g_BlockRegistry->getIDByName(Internal::Registry::g_ItemRegistry->getNameByID(slot->id));
 					Internal::g_World->setBlockAtLocationAbsolute(x, y, z, translateID);
 
 
@@ -319,11 +320,12 @@ namespace Minecraft::Server::Protocol {
 					if (playerBoundsCheck(x + xoff, y + yoff, z + zoff)) {
 
 						//Actually make a translator from item ID to block ID (use namespaces!)
-						BlockID translateID = 3984;
-
+						BlockID translateID = Internal::Registry::g_BlockRegistry->getIDByName(Internal::Registry::g_ItemRegistry->getNameByID(slot->id));
+						
 						Internal::g_World->setBlockAtLocationAbsolute(x + xoff, y + yoff, z + zoff, translateID);
 
 
+						std::cout << Internal::Registry::g_ItemRegistry->getNameByID(slot->id) << std::endl;
 						//Subtract from items
 						slot->item_count--;
 

@@ -1,6 +1,7 @@
 #include "World.h"
 
 #include "../Utilities/Utils.h"
+#include "Registry/ItemRegistry.h"
 #include "../Protocol/Play.h"
 #include <iostream>
 namespace Minecraft::Server::Internal{
@@ -66,7 +67,7 @@ namespace Minecraft::Server::Internal{
 
 	void World::chunkgenUpdate()
 	{
-		glm::ivec2 v = { (float)((int)(Player::g_Player.x / (16.0f))) - 0.5f, (float)((int)(Player::g_Player.z / (16.0f))) - 0.5f };
+		glm::ivec2 v = { (float)((int)(Player::g_Player.x / (16.0f))) + 0.5f, (float)((int)(Player::g_Player.z / (16.0f))) + 0.5f };
 
 		if (v != lastPos) {
 			//WORLD MANAGEMENT
@@ -180,8 +181,10 @@ namespace Minecraft::Server::Internal{
 		}
 
 		setBlockAtLocationRelative(cX, cZ, corrX % 16, y, corrZ % 16, block);
-		utilityPrint("Set block ID at: " + std::to_string(x) + " " + std::to_string(y) + " " + std::to_string(z) + " to " + std::to_string((int)block), LOGGER_LEVEL_TRACE);
 
+		//TODO: TO (BLOCK NAME)
+		utilityPrint("Set block ID at: " + std::to_string(x) + " " + std::to_string(y) + " " + std::to_string(z), LOGGER_LEVEL_TRACE);
+		
 
 		//Send block update packet
 		Protocol::Play::PacketsOut::send_change_block(x, y, z, block);

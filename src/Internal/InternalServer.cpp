@@ -3,6 +3,7 @@
 #include "../Utilities/Utils.h"
 #include "../Protocol/Play.h"
 #include "Registry/ItemRegistry.h"
+#include "Registry/BlockRegistry.h"
 
 namespace Minecraft::Server::Internal {
 	InternalServer::InternalServer()
@@ -12,6 +13,8 @@ namespace Minecraft::Server::Internal {
 		g_World = new World();
 		Registry::g_ItemRegistry = new Registry::ItemRegistry();
 		Registry::g_ItemRegistry->registerVanillaItems();
+		Registry::g_BlockRegistry = new Registry::BlockRegistry();
+		Registry::g_BlockRegistry->registerVanillaBlocks();
 	}
 	InternalServer::~InternalServer()
 	{

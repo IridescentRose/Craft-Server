@@ -66,6 +66,9 @@
     <ClCompile Include="src\Internal\Registry\ItemRegistry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Internal\Registry\BlockRegistry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Internal\Chunks\ChunkColumn.h">
@@ -126,6 +129,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Internal\Blocks\BlockData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Internal\Registry\InverseMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Internal\Registry\BlockRegistry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,4 +1,5 @@
 #include "ItemRegistry.h"
+#include "InverseMap.h"
 
 namespace Minecraft::Server::Internal::Registry {
 	ItemRegistry::ItemRegistry()
@@ -2381,10 +2382,17 @@ namespace Minecraft::Server::Internal::Registry {
         registryMap.emplace("minecraft:heart_of_the_sea",
             789
         );
+        reverseMap = inverse_map(registryMap);
 	}
+
 	ItemProtocolID ItemRegistry::getIDByName(std::string namespaceid)
 	{
 		return registryMap[namespaceid];
+	}
+
+	std::string ItemRegistry::getNameByID(ItemProtocolID protocolid)
+	{
+		return reverseMap[protocolid];
 	}
 
 	ItemRegistry* g_ItemRegistry;
