@@ -4,4 +4,6 @@ Craft Server is a pure minecraft server-side <i>implementation</i> based upon th
 
 Craft Server is not made in any part by Mojang nor represents Mojang's original work Minecraft. It is a fan-made re-implementation for non-commercial use, and must never be sold.
 
+Furthermore this implementation is a 100% clean room technique, with no knowledge of the original source code involved.
+
 The only assets of Mojang AB used to derive this was the Data Generators found in Minecraft's server.jar, which is publicly available for download, and was transformed to a Protocol ID map to respect Minecraft's namespacing convention.
