@@ -11,6 +11,12 @@
 using namespace Minecraft::Server::Internal::Chunks;
 
 namespace Minecraft::Server::Internal {
+
+	struct TimeDataStruct{
+		uint64_t age;
+		uint64_t timeOfDay;
+	};
+
 	class World {
 	public:
 		World();
@@ -36,6 +42,7 @@ namespace Minecraft::Server::Internal {
 		std::ofstream chunkModifiedArray;
 		std::map<mc::Vector3i, ChunkColumn*> chunkMap;
 		std::map<mc::Vector3i, int> chunkModMap;
+		TimeDataStruct timedata;
 	private:
 
 	};

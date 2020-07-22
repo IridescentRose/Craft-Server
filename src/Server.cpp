@@ -70,6 +70,7 @@ namespace Minecraft::Server {
 			if (g_NetMan->getConnectionStatus() == CONNECTION_STATE_PLAY) {
 				Internal::g_World->chunkgenUpdate();
 			}
+			Internal::g_World->tickUpdate();
 
 			while (g_NetMan->ReceivePacket() && pc < 50) {
 				pc++;
@@ -84,6 +85,7 @@ namespace Minecraft::Server {
 			count++;
 			if (count % 20 == 0) {
 				Protocol::Play::PacketsOut::send_keepalive(0xCAFEBABECAFEBABE);
+				Protocol::Play::PacketsOut::send_time_update2(Internal::g_World->timedata);
 			}
 		}
 		else {

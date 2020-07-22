@@ -34,6 +34,14 @@ namespace Minecraft::Server::Internal{
 
 			chunkModMap.emplace(v, mod);
 		}
+		std::ifstream timeDat("./world/time.dat");
+
+		if(timeDat.is_open()){
+			timeDat >> timedata.age;
+			timeDat >> timedata.timeOfDay;
+		}
+
+		timeDat.close();
 
 		chunkModifiedArray = std::ofstream("./world/level.dat");
 	}
@@ -57,11 +65,18 @@ namespace Minecraft::Server::Internal{
 
 		}
 
+		std::ofstream timeDat("./world/time.dat");
+		timeDat << timedata.age << std::endl;
+		timeDat << timedata.timeOfDay << std::endl;
+		timeDat.close();
+
 		chunkModifiedArray.close();
 	}
 
 	void World::tickUpdate()
 	{
+		timedata.age++;
+		timedata.timeOfDay = timedata.age % 24000;
 		entityManager.update();
 	}
 

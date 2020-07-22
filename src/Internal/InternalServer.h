@@ -23,9 +23,8 @@ namespace Minecraft::Server::Internal {
 		bool isOpen();
 
 
+		void tickUpdate();
 	private:
-		static int tickUpdateThread(unsigned int argc, void* argv);
-		Thread* tickUpdate;
 		bool bopen;
 		
 	};

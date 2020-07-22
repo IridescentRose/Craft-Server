@@ -492,6 +492,17 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_time_update()
 	g_NetMan->SendPackets();
 }
 
+void Minecraft::Server::Protocol::Play::PacketsOut::send_time_update2(Internal::TimeDataStruct data)
+{
+	PacketOut* p = new PacketOut(17);
+	p->ID = 0x4A;
+	p->buffer->WriteBEInt64(data.age);
+	p->buffer->WriteBEInt64(data.timeOfDay);
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
+}
+
 void Minecraft::Server::Protocol::Play::PacketsOut::send_spawn_position()
 {
 	PacketOut* p = new PacketOut(10);

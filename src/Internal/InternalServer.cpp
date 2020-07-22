@@ -8,7 +8,6 @@
 namespace Minecraft::Server::Internal {
 	InternalServer::InternalServer()
 	{
-		tickUpdate = NULL;
 		bopen = false;
 		g_World = new World();
 		Registry::g_ItemRegistry = new Registry::ItemRegistry();
@@ -18,7 +17,7 @@ namespace Minecraft::Server::Internal {
 	}
 	InternalServer::~InternalServer()
 	{
-		tickUpdate = NULL;
+
 	}
 	void InternalServer::start()
 	{
@@ -35,18 +34,14 @@ namespace Minecraft::Server::Internal {
 		g_World->cleanup();
 		utilityPrint("Stopping Internal Server!", LOGGER_LEVEL_INFO);
 	}
-	int InternalServer::tickUpdateThread(unsigned int argc, void* argv)
-	{
-		while (true) {
-			//Event update first then
-			
-			//TICK UPDATE!
-			Platform::delayForMS(50);
-		}
-	}
 
 	bool InternalServer::isOpen() {
 		return bopen;
+	}
+
+	void InternalServer::tickUpdate()
+	{
+		g_World->tickUpdate();
 	}
 
 	InternalServer* g_InternalServer;

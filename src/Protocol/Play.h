@@ -114,6 +114,7 @@ namespace Minecraft::Server::Protocol {
 			void send_player_position_look();
 			void send_world_border();
 			void send_time_update();
+			void send_time_update2(Internal::TimeDataStruct data);
 			void send_spawn_position();
 
 			void send_keepalive(long long int ll);
