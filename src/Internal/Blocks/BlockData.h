@@ -6,12 +6,6 @@ namespace Minecraft::Server::Internal::Blocks{
 	typedef uint16_t BlockProtocolID;
 
 	struct BlockData{
-		BlockProtocolID protocolID;
-		ItemProtocolID itemID;
-
-		std::string namespaceID;
-		std::string name;
-
 		uint8_t lightValue;
 		uint8_t spreadLightFalloff;
 		bool transparent;
@@ -24,7 +18,6 @@ namespace Minecraft::Server::Internal::Blocks{
 		bool solid;
 		bool usableBySpectator;
 		bool fullBlock;
-		bool terraformable;
 		float blockHeight;
 		float hardness;
 	};

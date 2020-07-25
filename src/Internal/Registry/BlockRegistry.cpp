@@ -8614,7 +8614,7 @@ namespace Minecraft::Server::Internal::Registry {
 		reverseMap = inverse_map(registryMap);
 	}
 
-    ItemProtocolID BlockRegistry::getIDByName(std::string namespaceid)
+	BlockProtocolID BlockRegistry::getIDByName(std::string namespaceid)
     {
         return registryMap[namespaceid];
     }
