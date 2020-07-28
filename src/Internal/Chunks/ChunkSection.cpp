@@ -2,6 +2,7 @@
 #include <malloc.h>
 #include <fstream>
 #include <Utilities/Logger.h>
+#include "../Registry/BlockRegistry.h"
 #include "../World.h"
 #include <iostream>
 namespace Minecraft::Server::Internal::Chunks {
@@ -51,24 +52,24 @@ namespace Minecraft::Server::Internal::Chunks {
 					int rY = cY * 16 + y;
 
 					if (rY == 0) {
-						blocks[idx] = 33;
+						blocks[idx] = Registry::g_BlockRegistry->getIDByName("minecraft:bedrock");
 						empty = false;
 					}
 					else if (rY < 63) {
-						blocks[idx] = 1;
+						blocks[idx] = Registry::g_BlockRegistry->getIDByName("minecraft:stone");
 						empty = false;
 					}
 					else if (rY >= 63 && rY < 66) {
-						blocks[idx] = 10;
+						blocks[idx] = Registry::g_BlockRegistry->getIDByName("minecraft:sand");
 						empty = false;
 					}
 					else if (rY == 66) {
-						blocks[idx] = 9;
+						blocks[idx] = Registry::g_BlockRegistry->getIDByName("minecraft:sand");
 						empty = false;
 					}
 					else {
-						if ((x + z - rY)*3 % 2 == 0 && rY == 67) {
-							blocks[idx] = 1041;
+						if ((x + z - rY) % 32 == 0 && rY == 67) {
+							blocks[idx] = Registry::g_BlockRegistry->getIDByName("minecraft:cactus");
 							empty = false;
 						}
 						else {
