@@ -6,6 +6,7 @@
 #include "Login.h"
 #include "../Internal/Registry/ItemRegistry.h"
 #include "../Internal/Registry/BlockRegistry.h"
+#include "../Internal/Registry/BlockDataRegistry.h"
 #include <iostream>
 #include <Utilities/UUID.h>
 #if CURRENT_PLATFORM == PLATFORM_PSP
@@ -134,6 +135,83 @@ namespace Minecraft::Server::Protocol {
 	int Play::craft_recipe_request_handler(PacketIn* p) { utilityPrint("CRAFT_RECIPE_REQUEST Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::player_abilities_handler(PacketIn* p) { utilityPrint("PLAYER_ABILITIES Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	
+	int entnum = 1400;
+
+	void block_break_event(std::string id, int x, int y, int z){
+		
+		//Check IDs - for now we just want to spawn an item placeholder entity
+
+		//Spawn
+		Protocol::Play::PacketsOut::send_spawn_object(entnum, entnum, entnum, 2, x, y, z, 0, 0, 1, 0, 0, 0);
+
+		//Set Data
+		ByteBuffer* meta = new ByteBuffer(64);
+
+		//BASE
+
+		//IDX
+		meta->WriteBEInt8(0);
+		//TYPE
+		meta->WriteBEInt8(0);
+		//VAL
+		meta->WriteBEInt8(0);
+
+		//IDX
+		meta->WriteBEInt8(1);
+		//TYPE
+		meta->WriteBEInt8(1);
+		//VAL
+		meta->WriteVarInt32(300);
+
+		//IDX
+		meta->WriteBEInt8(2);
+		//TYPE
+		meta->WriteBEInt8(5);
+		//VAL
+		meta->WriteBool(false);
+
+		//IDX
+		meta->WriteBEInt8(3);
+		//TYPE
+		meta->WriteBEInt8(7);
+		//VAL
+		meta->WriteBool(false);
+
+		//IDX
+		meta->WriteBEInt8(4);
+		//TYPE
+		meta->WriteBEInt8(7);
+		//VAL
+		meta->WriteBool(false);
+
+		//IDX
+		meta->WriteBEInt8(5);
+		//TYPE
+		meta->WriteBEInt8(7);
+		//VAL
+		meta->WriteBool(false);
+
+		//IDX
+		meta->WriteBEInt8(6);
+		//TYPE
+		meta->WriteBEInt8(6);
+		////SLOT DATA
+		meta->WriteBool(true);
+		meta->WriteVarInt32(Internal::Registry::g_ItemRegistry->getIDByName(id));
+		meta->WriteBEInt8(1);
+		meta->WriteBEInt8(0);
+		
+		//EOD
+		meta->WriteBEInt8(0xFF);
+
+		Protocol::Play::PacketsOut::send_entity_metadata(entnum, *meta);
+
+		//Velocity
+		Protocol::Play::PacketsOut::send_entity_velocity(entnum++, 0, 0, 0);
+
+
+	}
+
 	int Play::player_digging_handler(PacketIn* p) { 
 		utilityPrint("PLAYER_DIGGING Triggered!", LOGGER_LEVEL_WARN); 
 
@@ -157,16 +235,17 @@ namespace Minecraft::Server::Protocol {
 		p->buffer->ReadBEUInt8(face);
 		utilityPrint("FACE: " + std::to_string((int)face), LOGGER_LEVEL_TRACE);
 
+		//Player started digging. We do need to check for instabreak blocks...
+		BlockID id = Internal::g_World->getBlockAtLocationAbsolute(x, y, z);
+
 		if (status == 0) {
-			//Player started digging. We do need to check for instabreak blocks...
-			BlockID id = Internal::g_World->getBlockAtLocationAbsolute(x, y, z);
-			std::cout << id << std::endl;
 
 			//Replace with registry data checker!
-			if(id == 1041){
+			if(Internal::Registry::g_BlockDataRegistry->getDataByName(Internal::Registry::g_BlockRegistry->getNameByID(id).substr(0, Internal::Registry::g_BlockRegistry->getNameByID(id).find_last_of("#")))->oneHitDig){
 				Internal::g_World->setBlockAtLocationAbsolute(x, y, z, 0); //Set to air
 
 				//Trigger block break events
+				block_break_event(Internal::Registry::g_BlockRegistry->getNameByID(id).substr(0, Internal::Registry::g_BlockRegistry->getNameByID(id).find_last_of("#")), x, y, z);
 			}
 
 
@@ -176,11 +255,12 @@ namespace Minecraft::Server::Protocol {
 			Internal::g_World->setBlockAtLocationAbsolute(x, y, z, 0); //Set to air
 
 			//Trigger block break events
+			block_break_event(Internal::Registry::g_BlockRegistry->getNameByID(id).substr(0, Internal::Registry::g_BlockRegistry->getNameByID(id).find_last_of("#")), x, y, z);
 		}
 
 		return 0; 
 	}
-	
+
 	int Play::entity_action_handler(PacketIn* p) { utilityPrint("ENTITY_ACTION Triggered!", LOGGER_LEVEL_WARN); return 0; }
 	int Play::steer_vehicle_handler(PacketIn* p) { utilityPrint("STEER_VEHICLE Triggered!", LOGGER_LEVEL_WARN); return 0; }
 
@@ -1099,6 +1179,81 @@ void Minecraft::Server::Protocol::Play::PacketsOut::send_change_block(int x, int
 		(static_cast<int64_t>(z & 0x3FFFFFF)));
 	p->buffer->WriteVarInt32(id);
 
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_spawn_object(int eid, uint64_t uuid1, uint64_t uuid2, uint8_t type, double x, double y, double z, int pitch, int yaw, int data, uint16_t vx, uint16_t vy, uint16_t vz)
+{
+	PacketOut* p = new PacketOut(128);
+	p->ID = 0x00;
+
+	p->buffer->WriteVarInt32(eid);
+
+	p->buffer->WriteBEInt64(uuid1);
+	p->buffer->WriteBEInt64(uuid2);
+
+	p->buffer->WriteBEUInt8(type);
+
+	p->buffer->WriteBEDouble(x);
+	p->buffer->WriteBEDouble(y);
+	p->buffer->WriteBEDouble(z);
+
+	p->buffer->WriteBEUInt8(pitch);
+	p->buffer->WriteBEUInt8(yaw);
+
+	p->buffer->WriteBEUInt32(data);
+
+	p->buffer->WriteBEUInt16(vx);
+	p->buffer->WriteBEUInt16(vy);
+	p->buffer->WriteBEUInt16(vz);
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_entity_metadata(int eid, ByteBuffer metadata)
+{
+	PacketOut* p = new PacketOut(metadata.GetUsedSpace() + 64);
+	p->ID = 0x3F;
+
+	p->buffer->WriteVarInt32(eid);
+
+	metadata.ResetRead();
+	for(int i = 0; i < metadata.GetUsedSpace(); i++){
+		uint8_t z = -1;
+		metadata.ReadBEUInt8(z);
+		p->buffer->WriteBEUInt8(z);
+	}
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_entity_velocity(int eid, uint16_t vx, uint16_t vy, uint16_t vz)
+{
+	PacketOut* p = new PacketOut(16);
+	p->ID = 0x41;
+
+	p->buffer->WriteVarInt32(eid);
+	p->buffer->WriteBEUInt16(vx);
+	p->buffer->WriteBEUInt16(vy);
+	p->buffer->WriteBEUInt16(vz);
+
+	g_NetMan->AddPacket(p);
+	g_NetMan->SendPackets();
+}
+
+void Minecraft::Server::Protocol::Play::PacketsOut::send_destroy_entities(std::vector<int> eids)
+{
+	PacketOut* p = new PacketOut(eids.size() * 5 + 5);
+	p->ID = 0x35;
+
+	p->buffer->WriteVarInt32(eids.size());
+	for(auto& eid : eids){
+		p->buffer->WriteVarInt32(eid);
+	}
+	
 	g_NetMan->AddPacket(p);
 	g_NetMan->SendPackets();
 }

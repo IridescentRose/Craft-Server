@@ -4,6 +4,7 @@
 #include "../Protocol/Play.h"
 #include "Registry/ItemRegistry.h"
 #include "Registry/BlockRegistry.h"
+#include "Registry/BlockDataRegistry.h"
 
 namespace Minecraft::Server::Internal {
 	InternalServer::InternalServer()
@@ -14,6 +15,8 @@ namespace Minecraft::Server::Internal {
 		Registry::g_ItemRegistry->registerVanillaItems();
 		Registry::g_BlockRegistry = new Registry::BlockRegistry();
 		Registry::g_BlockRegistry->registerVanillaBlocks();
+		Registry::g_BlockDataRegistry = new Registry::BlockDataRegistry();
+		Registry::g_BlockDataRegistry->registerVanillaBlockData();
 	}
 	InternalServer::~InternalServer()
 	{

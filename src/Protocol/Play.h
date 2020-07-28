@@ -131,6 +131,12 @@ namespace Minecraft::Server::Protocol {
 
 			void send_set_slot(uint8_t id, uint16_t num, Internal::Inventory::Slot* slt);
 			void send_change_block(int x, int y, int z, BlockID id);
+
+			void send_spawn_object(int eid, uint64_t uuid1, uint64_t uuid2, uint8_t type, double x, double y, double z, int pitch, int yaw, int data, uint16_t vx, uint16_t vy, uint16_t vz);
+			void send_entity_metadata(int eid, ByteBuffer metadata);
+
+			void send_entity_velocity(int eid, uint16_t vx, uint16_t vy, uint16_t vz);
+			void send_destroy_entities(std::vector<int> eids);
 		}
 
 		namespace PacketEvents {
