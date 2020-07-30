@@ -1,6 +1,8 @@
 #include "EntityManager.h"
 #include "../../Protocol/Play.h"
 #include "../World.h"
+#include "../../Utilities/Utils.h"
+#include <iostream>
 
 namespace Minecraft::Server::Internal::Entity {
 	EntityManager::EntityManager()
@@ -81,7 +83,6 @@ namespace Minecraft::Server::Internal::Entity {
 
 	int EntityManager::addEntity(Entity* entity)
 	{
-		entities.emplace(entityCounter, entity);
 		
 		if (entity->objData != NULL) {
 			//Spawn
@@ -103,9 +104,8 @@ namespace Minecraft::Server::Internal::Entity {
 			Protocol::Play::PacketsOut::send_entity_velocity(entityCounter, 0, 0, 0);
 		}
 
+		entities.emplace(entityCounter, entity);
 		return entityCounter++;
-
-
 	}
 
 	void EntityManager::clearEntity()
@@ -134,6 +134,7 @@ namespace Minecraft::Server::Internal::Entity {
 		Protocol::Play::PacketsOut::send_destroy_entities({ id });
 		if (entities.find(id) != entities.end()) {
 			delete entities[id];
+			entities[id] = NULL;
 			entities.erase(id);
 		}
 	}
@@ -141,15 +142,19 @@ namespace Minecraft::Server::Internal::Entity {
 	void EntityManager::update()
 	{
 		//Do something
-		for(auto& [i, e] : entities){
-			if(e->id == 2){
-				if(Player::g_Player.x > e->objData->x - 1.0f && Player::g_Player.x < e->objData->x + 1.0f){
-					if (Player::g_Player.z > e->objData->z - 1.0f && Player::g_Player.z < e->objData->z + 1.0f) {
-						if (Player::g_Player.y > e->objData->y - 2.75f && Player::g_Player.y < e->objData->y + 0.75f) {
-							if (g_World->inventory.addItem(((ItemEntity*)e)->item)) {
-								deleteEntity(i);
+		for (int i = 0; i < entities.size(); i++) {
+			auto e = entities[i];
+			if (e != NULL)
+			{
+				if (e->id == 2) {
+					if (Player::g_Player.x > e->objData->x - 1.0f && Player::g_Player.x < e->objData->x + 1.0f) {
+						if (Player::g_Player.z > e->objData->z - 1.0f && Player::g_Player.z < e->objData->z + 1.0f) {
+							if (Player::g_Player.y > e->objData->y - 2.75f && Player::g_Player.y < e->objData->y + 0.75f) {
+								if (g_World->inventory.addItem(((ItemEntity*)e)->item)) {
+									deleteEntity(i);
+								}
+								continue;
 							}
-							continue;
 						}
 					}
 				}

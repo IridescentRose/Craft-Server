@@ -174,8 +174,7 @@ namespace Minecraft::Server::Protocol {
 
 		uint8_t status = -1;
 		p->buffer->ReadBEUInt8(status);
-		utilityPrint("Dig Type: " + std::to_string(status), LOGGER_LEVEL_DEBUG);
-
+		
 		int64_t pos = -1;
 		p->buffer->ReadBEInt64(pos);
 
@@ -190,8 +189,7 @@ namespace Minecraft::Server::Protocol {
 
 		uint8_t face = -1;
 		p->buffer->ReadBEUInt8(face);
-		utilityPrint("FACE: " + std::to_string((int)face), LOGGER_LEVEL_TRACE);
-
+		
 		//Player started digging. We do need to check for instabreak blocks...
 		BlockID id = Internal::g_World->getBlockAtLocationAbsolute(x, y, z);
 
