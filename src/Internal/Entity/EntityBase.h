@@ -4,13 +4,22 @@
 #include <string>
 
 namespace Minecraft::Server::Internal::Entity {
+
+	struct Object{
+		double x, y, z;
+		float yaw, pitch;
+		uint16_t vx, vy, vz;
+	};
+
 	struct Entity {
+		int id;
 		uint8_t flags;
 		uint16_t air;
 		std::string customName;
 		bool isCustomNameAvailable;
 		bool silent;
 		bool noGravity;
+		Object* objData;
 	};
 
 	struct ItemEntity : Entity {

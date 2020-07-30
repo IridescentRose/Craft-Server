@@ -17,6 +17,8 @@
 #include <experimental/filesystem>
 #endif
 
+#include "../Internal/Entity/EntityBase.h"
+
 namespace Minecraft::Server::Protocol {
 	using namespace Stardust::Utilities;
 
@@ -141,75 +143,30 @@ namespace Minecraft::Server::Protocol {
 		
 		//Check IDs - for now we just want to spawn an item placeholder entity
 
-		//Spawn
-		Protocol::Play::PacketsOut::send_spawn_object(entnum, entnum, entnum, 2, x, y, z, 0, 0, 1, 0, 0, 0);
+		Internal::Entity::ItemEntity* itemEnt = new Internal::Entity::ItemEntity();
+		itemEnt->air = 300;
+		itemEnt->customName = "";
+		itemEnt->flags = 0;
+		itemEnt->isCustomNameAvailable = false;
+		itemEnt->noGravity = false;
+		itemEnt->silent = false;
+		itemEnt->item.present = true;
+		itemEnt->item.id = Internal::Registry::g_ItemRegistry->getIDByName(id);
+		itemEnt->item.item_count = 1;
 
-		//Set Data
-		ByteBuffer* meta = new ByteBuffer(64);
-
-		//BASE
-
-		//IDX
-		meta->WriteBEInt8(0);
-		//TYPE
-		meta->WriteBEInt8(0);
-		//VAL
-		meta->WriteBEInt8(0);
-
-		//IDX
-		meta->WriteBEInt8(1);
-		//TYPE
-		meta->WriteBEInt8(1);
-		//VAL
-		meta->WriteVarInt32(300);
-
-		//IDX
-		meta->WriteBEInt8(2);
-		//TYPE
-		meta->WriteBEInt8(5);
-		//VAL
-		meta->WriteBool(false);
-
-		//IDX
-		meta->WriteBEInt8(3);
-		//TYPE
-		meta->WriteBEInt8(7);
-		//VAL
-		meta->WriteBool(false);
-
-		//IDX
-		meta->WriteBEInt8(4);
-		//TYPE
-		meta->WriteBEInt8(7);
-		//VAL
-		meta->WriteBool(false);
-
-		//IDX
-		meta->WriteBEInt8(5);
-		//TYPE
-		meta->WriteBEInt8(7);
-		//VAL
-		meta->WriteBool(false);
-
-		//IDX
-		meta->WriteBEInt8(6);
-		//TYPE
-		meta->WriteBEInt8(6);
-		////SLOT DATA
-		meta->WriteBool(true);
-		meta->WriteVarInt32(Internal::Registry::g_ItemRegistry->getIDByName(id));
-		meta->WriteBEInt8(1);
-		meta->WriteBEInt8(0);
+		itemEnt->id = 2;
 		
-		//EOD
-		meta->WriteBEInt8(0xFF);
+		itemEnt->objData = new Internal::Entity::Object();
+		itemEnt->objData->x = x + 0.5;
+		itemEnt->objData->y = y + 0.5;
+		itemEnt->objData->z = z + 0.5;
+		itemEnt->objData->yaw = 0;
+		itemEnt->objData->pitch = 0;
+		itemEnt->objData->vx = 0;
+		itemEnt->objData->vy = 0;
+		itemEnt->objData->vz = 0;
 
-		Protocol::Play::PacketsOut::send_entity_metadata(entnum, *meta);
-
-		//Velocity
-		Protocol::Play::PacketsOut::send_entity_velocity(entnum++, 0, 0, 0);
-
-
+		Internal::g_World->entityManager.addEntity(itemEnt);
 	}
 
 	int Play::player_digging_handler(PacketIn* p) { 
