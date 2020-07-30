@@ -1,7 +1,7 @@
 #include "Inventory.h"
 #include <Utilities/JSON.h>
 #include "../Registry/ItemRegistry.h"
-
+#include "../../Protocol/Play.h"
 namespace Minecraft::Server::Internal::Inventory {
 	Inventory::Inventory()
 	{
@@ -54,5 +54,78 @@ namespace Minecraft::Server::Internal::Inventory {
 
 	void Inventory::update()
 	{
+	}
+
+	bool Inventory::addItem(Slot slt)
+	{
+		int slot = -1;
+
+		//Priority search
+		for(int i = 36; i < 45; i++){
+			if(inventorySpots[i].present){
+				if(inventorySpots[i].id == slt.id){
+					//Check the stack
+					if(inventorySpots[i].item_count < 64){
+						//Fine!
+						slot = i;
+						break;
+					}
+				}
+			}
+		}
+
+		//None suitable yet, search inv.
+		if(slot == -1){
+			for (int i = 9; i < 36; i++) {
+				if (inventorySpots[i].present) {
+					if (inventorySpots[i].id == slt.id) {
+						//Check the stack
+						if (inventorySpots[i].item_count < 64) {
+							//Fine!
+							slot = i;
+							break;
+						}
+					}
+				}
+			}
+
+			if(slot == -1){
+				//Find next empty
+
+				//Prio search
+				for (int i = 36; i < 45; i++) {
+					if (!inventorySpots[i].present) {
+						slot = i;
+						break;
+					}
+				}
+
+				if (slot == -1) {
+					//Okay... one last try
+					for (int i = 9; i < 36; i++) {
+						if (!inventorySpots[i].present) {
+							slot = i;
+							break;
+						}
+					}
+				}
+
+			}
+		}
+
+		if(slot == -1){
+			return false;
+		}else{
+			if(inventorySpots[slot].present){
+				inventorySpots[slot].item_count++;
+			}else{
+				inventorySpots[slot].present = true;
+				inventorySpots[slot].id = slt.id;
+				inventorySpots[slot].item_count = 1;
+			}
+
+			Protocol::Play::PacketsOut::send_set_slot(0, slot, &inventorySpots[slot]);
+			return true;
+		}
 	}
 }

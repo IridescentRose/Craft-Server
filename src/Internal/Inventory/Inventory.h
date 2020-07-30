@@ -14,6 +14,8 @@ namespace Minecraft::Server::Internal::Inventory {
 
 		void update();
 
+		bool addItem(Slot slt);
+
 	private:
 		Slot inventorySpots[46];
 	};

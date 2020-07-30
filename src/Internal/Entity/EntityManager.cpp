@@ -143,10 +143,12 @@ namespace Minecraft::Server::Internal::Entity {
 		//Do something
 		for(auto& [i, e] : entities){
 			if(e->id == 2){
-				if(Player::g_Player.x > e->objData->x - 1.5f && Player::g_Player.x < e->objData->x + 1.5f){
-					if (Player::g_Player.z > e->objData->z - 1.5f && Player::g_Player.z < e->objData->z + 1.5f) {
+				if(Player::g_Player.x > e->objData->x - 1.0f && Player::g_Player.x < e->objData->x + 1.0f){
+					if (Player::g_Player.z > e->objData->z - 1.0f && Player::g_Player.z < e->objData->z + 1.0f) {
 						if (Player::g_Player.y > e->objData->y - 2.75f && Player::g_Player.y < e->objData->y + 0.75f) {
-							deleteEntity(i);
+							if (g_World->inventory.addItem(((ItemEntity*)e)->item)) {
+								deleteEntity(i);
+							}
 							continue;
 						}
 					}
