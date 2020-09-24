@@ -1,5 +1,6 @@
 const std = @import("std");
 
+//Use a basic varint reader to read to a u32
 pub fn decodeRead(reader: anytype) !u32{
     var result : u32 = 0;
 

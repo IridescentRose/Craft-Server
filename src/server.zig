@@ -12,7 +12,6 @@ pub fn init() !void {
     shouldRun = true;
     
     try network.init();
-    
     sock = try network.Socket.create(.ipv4, .tcp);
     
     try sock.bindToPort(25565);
@@ -27,12 +26,14 @@ pub fn deinit() void{
 
 pub fn update() !void {
     log.info("Waiting for connection", .{});
-        
+    
+    //TODO: Replace with real allocator
     const cl = try std.heap.page_allocator.create(client.Client);
+
+    //Create a client object
     cl.* = client.Client{
         .conn = try sock.accept(),
         .handle_frame = async client.Client.handle(cl),
     };
-    
 }
 
