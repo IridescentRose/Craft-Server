@@ -30,13 +30,13 @@ pub const Level = enum {
 
 var level: Level = Level.Trace;
 var quiet: bool = false;
-var start: u64 = 0;
+var start: i64 = 0;
 
 pub fn init() void {
     start = std.time.milliTimestamp();
 }
 
-pub fn log(lv: Level, comptime fmt: []const u8, args: var) !void {
+pub fn log(lv: Level, comptime fmt: []const u8, args: anytype) !void {
     if (@enumToInt(lv) < @enumToInt(level)) {
         return;
     }
@@ -54,21 +54,21 @@ pub fn setLevel(lv: Level) void {
     level = lv;
 }
 
-pub fn trace(comptime fmt: []const u8, args: var) void {
+pub fn trace(comptime fmt: []const u8, args: anytype) void {
     log(Level.Trace, fmt, args) catch return;
 }
-pub fn debug(comptime fmt: []const u8, args: var) void {
+pub fn debug(comptime fmt: []const u8, args: anytype) void {
     log(Level.Debug, fmt, args) catch return;
 }
-pub fn info(comptime fmt: []const u8, args: var) void {
+pub fn info(comptime fmt: []const u8, args: anytype) void {
     log(Level.Info, fmt, args) catch return;
 }
-pub fn warn(comptime fmt: []const u8, args: var) void {
+pub fn warn(comptime fmt: []const u8, args: anytype) void {
     log(Level.Warn, fmt, args) catch return;
 }
-pub fn err(comptime fmt: []const u8, args: var) void {
+pub fn err(comptime fmt: []const u8, args: anytype) void {
     log(Level.Error, fmt, args) catch return;
 }
-pub fn fatal(comptime fmt: []const u8, args: var) void {
+pub fn fatal(comptime fmt: []const u8, args: anytype) void {
     log(Level.Fatal, fmt, args) catch return;
 }
