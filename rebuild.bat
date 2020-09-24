@@ -1,2 +1,0 @@
-clean.bat
-build.bat
