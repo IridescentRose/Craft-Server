@@ -6,6 +6,7 @@ const buffer_size = 1000;
 
 pub fn main() !void {
     log.init();
+    log.setLevel(log.Level.Debug);
     log.info("Craft-Server v0.3", .{});
 
     try server.init();

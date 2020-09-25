@@ -1,6 +1,7 @@
 const std = @import("std");
 const log = @import("log");
 const network = @import("network");
+const netbus = @import("netbus.zig");
 
 const packet = @import("packet.zig");
 usingnamespace @import("decode.zig");
@@ -8,19 +9,28 @@ usingnamespace @import("decode.zig");
 //Minecraft's connection statuses
 //Based on what connection status determines the behavior
 pub const ConnectionStatus = enum(c_int) {
-    const Self = @This();
+    pub const Self = @This();
 
     Handshake = 0,
     Status = 1,
     Login = 2,
     Play = 3,
 
-    fn toString(self: Self) []const u8 {
+    pub fn toString(self: Self) []const u8 {
         return switch (self) {
             ConnectionStatus.Handshake => "Handshake",
             ConnectionStatus.Status => "Status",
             ConnectionStatus.Login => "Login",
             ConnectionStatus.Play => "Play",
+        };
+    }
+
+    pub fn toValue(self: Self) c_int {
+        return switch (self){
+            ConnectionStatus.Handshake => 0,
+            ConnectionStatus.Status => 1,
+            ConnectionStatus.Login => 2,
+            ConnectionStatus.Play => 2,
         };
     }
 };
@@ -30,13 +40,13 @@ pub const ConnectionStatus = enum(c_int) {
 pub const Client = struct {
     conn: network.Socket,
     handle_frame: @Frame(Client.handle),
-    status: ConnectionStatus = ConnectionStatus.Handshake,
-    compress: bool = false,
+    status: ConnectionStatus,
+    compress: bool,
+    protocolVer: u32,
 
     //Read a packet from the reader into an existing buffer.
     pub fn readPacket(reader: anytype, pack: *packet.Packet, compress: bool) !bool{
         var size : u32 = try decodeVarInt(reader);
-        log.info("Packet size: {}", .{size});
 
         //Check the size
         if (size == 0){
@@ -58,26 +68,13 @@ pub const Client = struct {
             pack.id = try pack.toStream().reader().readByte();
         }
 
-        
-        if(pack.id == 0){
-            var rd = pack.toStream().reader();
-            try rd.skipBytes(1, .{});
-            var protocol = try decodeVarInt(rd);
-            var servaddr = try decodeUTF8Str(rd);
-            var port : u16 = try rd.readIntBig(u16);
-            var state : u8 = try rd.readIntBig(u8);
-            
-            log.info("Protocol Ver: {}", .{protocol});
-            log.info("Server Addr: {}", .{servaddr});
-            log.info("Port: {}", .{port});
-            log.info("Requested State: {}", .{@intToEnum(ConnectionStatus, state).toString()});
-        }
-
         return true;
     }
 
     //Handle our connection object.
     pub fn handle(self: *Client) !void {
+        self.status = ConnectionStatus.Handshake;
+
         log.info("Client connected from {}", .{
             try self.conn.getLocalEndPoint(),
         });
@@ -85,18 +82,20 @@ pub const Client = struct {
         while (true) {
             const reader = self.conn.reader();
             
-            var pck : packet.Packet = packet.Packet{
+            const pck = try std.heap.page_allocator.create(packet.Packet);
+            defer std.heap.page_allocator.destroy(pck);
+            pck.* = packet.Packet{
                 .buffer = undefined,
                 .size = 0
             };
 
-            if(!try readPacket(reader, &pck, self.compress)){
+            if(!try readPacket(reader, pck, self.compress)){
                 log.info("Closed connection from {}",.{try self.conn.getLocalEndPoint()});
                 self.conn.close();
+                break;
             }
 
-
-   
+            try netbus.handlePacket(pck, self);
         }
     }
 };
