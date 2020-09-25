@@ -1,7 +1,7 @@
 const std = @import("std");
 const log = @import("log");
 
-//Use a basic varint reader to read to a u32
+//A basic VarInt Reader
 pub fn decodeVarInt(reader: anytype) !u32{
     var result : u32 = 0;
 
@@ -21,6 +21,7 @@ pub fn decodeVarInt(reader: anytype) !u32{
     return result;
 }
 
+//Read a VarInt prepended string
 pub fn decodeUTF8Str(reader: anytype) ![]const u8{
     var size : u32 = try decodeVarInt(reader);
 

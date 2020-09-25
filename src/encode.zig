@@ -1,7 +1,7 @@
 const std = @import("std");
 const log = @import("log");
 
-//Use a basic varint reader to read to a u32
+//A basic VarInt Writer
 pub fn encodeVarInt(writer: anytype, int: usize) !void{
     var intTemp = int;
     while(intTemp & 0b10000000 > 0){
@@ -11,6 +11,7 @@ pub fn encodeVarInt(writer: anytype, int: usize) !void{
     try writer.writeByte(@truncate(u8,intTemp));
 }
 
+//Write A VarInt prepended string
 pub fn encodeUTF8Str(writer: anytype, str: []const u8) !void{
     try encodeVarInt(writer, str.len);
     

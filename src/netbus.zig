@@ -1,21 +1,15 @@
+//Common includes
 const std = @import("std");
 const log = @import("log");
 const packet = @import("packet.zig");
 const client = @import("client.zig");
+const config = @import("config.zig");
 
-//Initialize the bus
-pub fn init() !void{
-    
-}
-
-//Deinitialize the bus
-pub fn deinit() !void{
-
-}
-
+//Encode / Decode support
 usingnamespace @import("decode.zig");
 usingnamespace @import("encode.zig");
 
+//Handles the handshake connection status
 pub fn handleHandshake(pack: *packet.Packet, clnt: *client.Client) !void{
     //There's only 1 ID - no switch
     var rd = pack.toStream().reader();
@@ -50,17 +44,19 @@ pub fn handleHandshake(pack: *packet.Packet, clnt: *client.Client) !void{
 
         std.heap.page_allocator.free(servaddr);
     }else{
+        //Anything else is an error!
         log.err("Handshake with invalid ID {x}", .{pack.id});
+        clnt.shouldClose = true;
     }
 }
 
-const config = @import("config.zig");
-
+//Handle the status request connection state
 pub fn handleStatus(pack: *packet.Packet, clnt: *client.Client) !void{
     var rd = pack.toStream().reader();
     try rd.skipBytes(1, .{});
 
     if(pack.id == 0){
+        //Server Status Request Response
         log.trace("Sending Server Status!", .{});
         var buf: []const u8 = "{\"description\":{\"text\":\"" ++ config.motd ++ "\"},\"players\":{\"max\":10,\"online\":0},\"version\":{\"name\":\"1.15.2\",\"protocol\":578}}";
 
@@ -72,6 +68,7 @@ pub fn handleStatus(pack: *packet.Packet, clnt: *client.Client) !void{
         //Well this is a status request - send a status back!
         try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), 0x00, clnt.compress);
     }else if(pack.id == 1){
+        //Server Status Ping Response
         log.trace("Sending Pong!", .{});
         var ping : u64 = try rd.readIntBig(u64);
 
@@ -81,29 +78,39 @@ pub fn handleStatus(pack: *packet.Packet, clnt: *client.Client) !void{
         try writ.writeIntBig(u64, ping);
 
         try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), 0x01, clnt.compress);
+        //Close our client
         clnt.shouldClose = true;
     }else{
+        //Anything else is an error!
         log.err("Status with invalid ID {x}", .{pack.id});
+        clnt.shouldClose = true;
     }
 }
 
+//Generic handle all packets
 pub fn handlePacket(pack: *packet.Packet, clnt: *client.Client) !void{
     //Switch on state
     switch(clnt.status){
         .Handshake => {
+            //Handle handshake
             try handleHandshake(pack, clnt);
         },
 
         .Status => {
+            //Handle status
             try handleStatus(pack, clnt);
         },
 
         .Login => {
+            //Handle login
             log.err("LOGIN RECEIVED - NOT HANDLED", .{});
+            clnt.shouldClose = true;
         },
 
         .Play => {
+            //Handle play
             log.err("PLAY RECEIVED - NOT HANDLED", .{});
+            clnt.shouldClose = true;
         }
     }
 }

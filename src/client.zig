@@ -17,6 +17,7 @@ pub const ConnectionStatus = enum(c_int) {
     Login = 2,
     Play = 3,
 
+    //Basic methods
     pub fn toString(self: Self) []const u8 {
         return switch (self) {
             ConnectionStatus.Handshake => "Handshake",
@@ -73,28 +74,34 @@ pub const Client = struct {
         return true;
     }
 
+    //Send a packet from the buffer to the socket.
     pub fn sendPacket(self: *Client, writer: anytype, buf: []u8, id: u8, compress: bool) !void{
 
+        //Allocate our full packet buffer and free it after
         var buffer = try std.heap.page_allocator.alloc(u8, buf.len + 1 + 1 + 5);
         defer std.heap.page_allocator.free(buffer);
 
+        //Make a nice interface
         var strm = std.io.fixedBufferStream(buffer);
         var writ = strm.writer();
 
+        //Encode the VarInt prefix + ID
         try encodeVarInt(writ, buf.len + 1);
         try writ.writeByte(id);
 
+        //Write the rest of the buffer
         var i : usize = 0;
         while(i < buf.len) : (i += 1){
             try writ.writeByte(buf[i]);
         }
 
-
+        //Write the full buffer to the socket!
         try writer.writeAll(strm.getWritten());
     }
 
     //Handle our connection object.
     pub fn handle(self: *Client) !void {
+        //Basic init
         self.shouldClose = false;
         self.status = ConnectionStatus.Handshake;
 
@@ -102,22 +109,26 @@ pub const Client = struct {
             try self.conn.getLocalEndPoint(),
         });
 
+        //Main loop
         while (!self.shouldClose) {
+            //Create a new packet instance
             const reader = self.conn.reader();
             
             const pck = try std.heap.page_allocator.create(packet.Packet);
             defer std.heap.page_allocator.destroy(pck);
-
             pck.* = packet.Packet{
                 .buffer = undefined,
                 .size = 0
             };
 
+            //Read packet
             _ = try await async readPacket(reader, pck, self.compress);
 
+            //Handle packet (and send)
             try netbus.handlePacket(pck, self);
         }
 
+        //We were closed - so close out!
         log.info("Closed connection from {}",.{try self.conn.getLocalEndPoint()});
         self.conn.close();
     }

@@ -1,5 +1,6 @@
 const std = @import("std");
 
+//Basic Packet structure
 pub const Packet = struct{
     const Self = @This();
     buffer: [512]u8 = undefined,
