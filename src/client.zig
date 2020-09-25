@@ -5,6 +5,7 @@ const netbus = @import("netbus.zig");
 
 const packet = @import("packet.zig");
 usingnamespace @import("decode.zig");
+usingnamespace @import("encode.zig");
 
 //Minecraft's connection statuses
 //Based on what connection status determines the behavior
@@ -43,6 +44,7 @@ pub const Client = struct {
     status: ConnectionStatus,
     compress: bool,
     protocolVer: u32,
+    shouldClose: bool,
 
     //Read a packet from the reader into an existing buffer.
     pub fn readPacket(reader: anytype, pack: *packet.Packet, compress: bool) !bool{
@@ -53,7 +55,7 @@ pub const Client = struct {
             return false;
         }
 
-        pack.buffer = [_]u8{0} ** 1024;
+        pack.buffer = [_]u8{0} ** 512;
 
         //Read into buffer
         var i : usize = 0;
@@ -71,31 +73,52 @@ pub const Client = struct {
         return true;
     }
 
+    pub fn sendPacket(self: *Client, writer: anytype, buf: []u8, id: u8, compress: bool) !void{
+
+        var buffer = try std.heap.page_allocator.alloc(u8, buf.len + 1 + 1 + 5);
+        defer std.heap.page_allocator.free(buffer);
+
+        var strm = std.io.fixedBufferStream(buffer);
+        var writ = strm.writer();
+
+        try encodeVarInt(writ, buf.len + 1);
+        try writ.writeByte(id);
+
+        var i : usize = 0;
+        while(i < buf.len) : (i += 1){
+            try writ.writeByte(buf[i]);
+        }
+
+
+        try writer.writeAll(strm.getWritten());
+    }
+
     //Handle our connection object.
     pub fn handle(self: *Client) !void {
+        self.shouldClose = false;
         self.status = ConnectionStatus.Handshake;
 
         log.info("Client connected from {}", .{
             try self.conn.getLocalEndPoint(),
         });
 
-        while (true) {
+        while (!self.shouldClose) {
             const reader = self.conn.reader();
             
             const pck = try std.heap.page_allocator.create(packet.Packet);
             defer std.heap.page_allocator.destroy(pck);
+
             pck.* = packet.Packet{
                 .buffer = undefined,
                 .size = 0
             };
 
-            if(!try readPacket(reader, pck, self.compress)){
-                log.info("Closed connection from {}",.{try self.conn.getLocalEndPoint()});
-                self.conn.close();
-                break;
-            }
+            _ = try await async readPacket(reader, pck, self.compress);
 
             try netbus.handlePacket(pck, self);
         }
+
+        log.info("Closed connection from {}",.{try self.conn.getLocalEndPoint()});
+        self.conn.close();
     }
 };

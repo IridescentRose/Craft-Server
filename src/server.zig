@@ -37,6 +37,7 @@ pub fn update() !void {
         .status = client.ConnectionStatus.Handshake,
         .protocolVer = 0,
         .compress = false,
+        .shouldClose = false,
     };
 
     defer std.heap.page_allocator.destroy(cl);

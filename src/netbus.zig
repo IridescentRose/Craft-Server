@@ -14,6 +14,7 @@ pub fn deinit() !void{
 }
 
 usingnamespace @import("decode.zig");
+usingnamespace @import("encode.zig");
 
 pub fn handleHandshake(pack: *packet.Packet, clnt: *client.Client) !void{
     //There's only 1 ID - no switch
@@ -47,8 +48,42 @@ pub fn handleHandshake(pack: *packet.Packet, clnt: *client.Client) !void{
         clnt.status = @intToEnum(client.ConnectionStatus, state);
         clnt.protocolVer = protocol;
 
+        std.heap.page_allocator.free(servaddr);
     }else{
-        log.err("Handshake with invalid ID {}", .{pack.id});
+        log.err("Handshake with invalid ID {x}", .{pack.id});
+    }
+}
+
+const config = @import("config.zig");
+
+pub fn handleStatus(pack: *packet.Packet, clnt: *client.Client) !void{
+    var rd = pack.toStream().reader();
+    try rd.skipBytes(1, .{});
+
+    if(pack.id == 0){
+        log.trace("Sending Server Status!", .{});
+        var buf: []const u8 = "{\"description\":{\"text\":\"" ++ config.motd ++ "\"},\"players\":{\"max\":10,\"online\":0},\"version\":{\"name\":\"1.15.2\",\"protocol\":578}}";
+
+        var buff2 : [256]u8 = undefined;
+        var strm = std.io.fixedBufferStream(&buff2);
+        var writ = strm.writer();
+        try encodeUTF8Str(writ, buf);
+
+        //Well this is a status request - send a status back!
+        try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), 0x00, clnt.compress);
+    }else if(pack.id == 1){
+        log.trace("Sending Pong!", .{});
+        var ping : u64 = try rd.readIntBig(u64);
+
+        var buff2 : [8]u8 = undefined;
+        var strm = std.io.fixedBufferStream(&buff2);
+        var writ = strm.writer();
+        try writ.writeIntBig(u64, ping);
+
+        try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), 0x01, clnt.compress);
+        clnt.shouldClose = true;
+    }else{
+        log.err("Status with invalid ID {x}", .{pack.id});
     }
 }
 
@@ -60,7 +95,7 @@ pub fn handlePacket(pack: *packet.Packet, clnt: *client.Client) !void{
         },
 
         .Status => {
-            log.err("STATUS RECEIVED - NOT HANDLED", .{});
+            try handleStatus(pack, clnt);
         },
 
         .Login => {

@@ -2,7 +2,7 @@ const std = @import("std");
 
 pub const Packet = struct{
     const Self = @This();
-    buffer: [1024]u8 = undefined,
+    buffer: [512]u8 = undefined,
     size: usize = 0,
     id: u8 = 0xFF,
     

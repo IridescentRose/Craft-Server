@@ -2,11 +2,9 @@ const std = @import("std");
 const log = @import("log");
 const server = @import("server.zig");
 
-const buffer_size = 1000;
-
 pub fn main() !void {
     log.init();
-    log.setLevel(log.Level.Debug);
+    log.setLevel(log.Level.Trace);
     log.info("Craft-Server v0.3", .{});
 
     try server.init();
@@ -16,4 +14,3 @@ pub fn main() !void {
         try server.update();
     }
 }
-
