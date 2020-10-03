@@ -39,7 +39,6 @@ pub fn main() !void {
     log.init();
     log.setLevel(log.Level.Trace);
     log.info("Craft-Server v0.3", .{});
-
     //Initialize the Server
     try server.init();
     defer server.deinit();

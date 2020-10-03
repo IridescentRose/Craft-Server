@@ -87,6 +87,29 @@ pub fn handleStatus(pack: *packet.Packet, clnt: *client.Client) !void{
     }
 }
 
+const banlist = @import("bans.zig");
+pub fn handleLogin(pack: *packet.Packet, clnt: *client.Client) !void{
+    var rd = pack.toStream().reader();
+    try rd.skipBytes(1, .{});
+
+    if(pack.id == 0){
+        var user : []const u8 = try decodeUTF8Str(rd);
+        log.info("User Logging in: {}", .{user});
+
+        //Check ban list
+        var banned = try banlist.isBanned(user);
+        if(banned){
+            log.info("User {} is banned!", .{user});
+            log.info("Disconnecting!", .{});
+            //Send disconnect packet
+
+            
+
+            clnt.shouldClose = true;
+        }
+    }
+}
+
 //Generic handle all packets
 pub fn handlePacket(pack: *packet.Packet, clnt: *client.Client) !void{
     //Switch on state
@@ -103,8 +126,7 @@ pub fn handlePacket(pack: *packet.Packet, clnt: *client.Client) !void{
 
         .Login => {
             //Handle login
-            log.err("LOGIN RECEIVED - NOT HANDLED", .{});
-            clnt.shouldClose = true;
+            try handleLogin(pack, clnt);
         },
 
         .Play => {
