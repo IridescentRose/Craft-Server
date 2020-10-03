@@ -58,12 +58,6 @@ pub fn deinit() void{
     network.deinit();
 }
 
-//Free and make sure we disconnect if logged in.
-pub fn destroyClient(cl: *client.Client) void{
-    cl.disconnect();
-    std.heap.page_allocator.destroy(cl);
-}
-
 //Update connection loop
 pub fn update() !void {
     log.info("Waiting for connection", .{});
@@ -72,7 +66,7 @@ pub fn update() !void {
     //Allocate a client
     const cl = try std.heap.page_allocator.create(client.Client);
     //Destroy the client when done
-    defer destroyClient(cl);
+    defer std.heap.page_allocator.destroy(cl);
 
     //Create a client object
     cl.* = client.Client{

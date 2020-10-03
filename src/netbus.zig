@@ -125,6 +125,8 @@ pub fn handleLogin(pack: *packet.Packet, clnt: *client.Client) !void{
             //Increment player counter.
             if(server.info.players.online + 1 < server.info.players.max){
                 server.info.players.online += 1;
+                clnt.loggedIn = true;
+                clnt.shouldClose = true;
             }else{
                 try sendLoginDisconnect(chat.Text{.text="Too many people trying to connect!", .color="green"}, clnt);
             }

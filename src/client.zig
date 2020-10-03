@@ -102,10 +102,12 @@ pub const Client = struct {
     }
 
     //Disconnect the player and reduce count.
-    pub fn disconnect(self: *Client) void{
+    pub fn disconnect(self: *Client) !void{
+        log.info("Closed connection from {}",.{try self.conn.getLocalEndPoint()});
         if(self.loggedIn){
             server.info.players.online -= 1;
         }
+        self.conn.close();
     }
 
     //Handle our connection object.
@@ -138,7 +140,6 @@ pub const Client = struct {
         }
 
         //We were closed - so close out!
-        log.info("Closed connection from {}",.{try self.conn.getLocalEndPoint()});
-        self.conn.close();
+        _ = self.disconnect() catch {};
     }
 };
