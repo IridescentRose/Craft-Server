@@ -22,6 +22,7 @@ pub const ServerInfo = struct{
 pub var info = ServerInfo{
     .description = chat.Text{
         .text = "Hello world",
+        .color = "gold"
     },
     .players = PlayerCount{.online = 0, .max = 100},
     .version = version.serverVersion,
@@ -57,6 +58,12 @@ pub fn deinit() void{
     network.deinit();
 }
 
+//Free and make sure we disconnect if logged in.
+pub fn destroyClient(cl: *client.Client) void{
+    cl.disconnect();
+    std.heap.page_allocator.destroy(cl);
+}
+
 //Update connection loop
 pub fn update() !void {
     log.info("Waiting for connection", .{});
@@ -64,18 +71,18 @@ pub fn update() !void {
     //TODO: Replace with real allocator
     //Allocate a client
     const cl = try std.heap.page_allocator.create(client.Client);
+    //Destroy the client when done
+    defer destroyClient(cl);
 
     //Create a client object
     cl.* = client.Client{
         .conn = try sock.accept(),
-        .handle_frame = async client.Client.handle(cl),
+        .handle_frame = await async client.Client.handle(cl),
         .status = client.ConnectionStatus.Handshake,
         .protocolVer = 0,
         .compress = false,
         .shouldClose = false,
     };
 
-    //Destroy the client when done
-    defer std.heap.page_allocator.destroy(cl);
 }
 

@@ -4,6 +4,7 @@ const network = @import("network");
 const netbus = @import("netbus.zig");
 
 const packet = @import("packet.zig");
+const server = @import("server.zig");
 usingnamespace @import("decode.zig");
 usingnamespace @import("encode.zig");
 
@@ -46,6 +47,7 @@ pub const Client = struct {
     compress: bool,
     protocolVer: u32,
     shouldClose: bool,
+    loggedIn: bool = false,
 
     //Read a packet from the reader into an existing buffer.
     pub fn readPacket(reader: anytype, pack: *packet.Packet, compress: bool) !bool{
@@ -97,6 +99,13 @@ pub const Client = struct {
 
         //Write the full buffer to the socket!
         try writer.writeAll(strm.getWritten());
+    }
+
+    //Disconnect the player and reduce count.
+    pub fn disconnect(self: *Client) void{
+        if(self.loggedIn){
+            server.info.players.online -= 1;
+        }
     }
 
     //Handle our connection object.

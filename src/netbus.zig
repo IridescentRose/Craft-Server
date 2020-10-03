@@ -87,7 +87,23 @@ pub fn handleStatus(pack: *packet.Packet, clnt: *client.Client) !void{
     }
 }
 
+//Include bans and chat
 const banlist = @import("bans.zig");
+const chat = @import("chat.zig");
+
+fn sendLoginDisconnect(reason: chat.Text, clnt: *client.Client) !void {
+    var buff2 : [512]u8 = undefined;
+    var strm = std.io.fixedBufferStream(&buff2);
+    var writ = strm.writer();
+
+    try encodeJSONStr(writ, reason);
+
+    //0x00 is DC
+    try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), 0x00, clnt.compress);
+    clnt.shouldClose = true;
+}
+
+//Handle the beginning of the login process
 pub fn handleLogin(pack: *packet.Packet, clnt: *client.Client) !void{
     var rd = pack.toStream().reader();
     try rd.skipBytes(1, .{});
@@ -102,10 +118,16 @@ pub fn handleLogin(pack: *packet.Packet, clnt: *client.Client) !void{
             log.info("User {} is banned!", .{user});
             log.info("Disconnecting!", .{});
             //Send disconnect packet
+            try sendLoginDisconnect(chat.Text{.text="You were banned.", .color="dark_red"}, clnt);
 
-
-
-            clnt.shouldClose = true;
+        }else{
+            //We're good!
+            //Increment player counter.
+            if(server.info.players.online + 1 < server.info.players.max){
+                server.info.players.online += 1;
+            }else{
+                try sendLoginDisconnect(chat.Text{.text="Too many people trying to connect!", .color="green"}, clnt);
+            }
         }
     }
 }

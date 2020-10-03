@@ -1,4 +1,5 @@
-
+//A genuine MC text object
+//Includes all formatting
 pub const Text = struct{
     text: []const u8,
     bold: bool = false,
@@ -9,31 +10,13 @@ pub const Text = struct{
     color: []const u8 = "gray",
 };
 
-pub const Text2 = struct{
-    text: []const u8,
-    bold: bool = false,
-    italic: bool = false,
-    underlined: bool = false,
-    strikethrough: bool = false,
-    obfuscated: bool = false,
-    insertion: []const u8 = "",
-    clickEvent: ClickEvent = ClickEvent{
-        .action = "",
-        .value = ""
-    },
-    hoverEvent: HoverEvent = HoverEvent{
-        .action = "",
-        .value = ""
-    },
-    color: []const u8 = "white",
-    style: []const u8 = "",
-};
-
+//Structures for on click events
 pub const ClickEvent = struct{
     action: []const u8,
     value: []const u8,
 };
 
+//Actions on click (use toString())
 pub const ClickAction = enum{
     const Self = @This();
     OpenUrl,
@@ -51,6 +34,7 @@ pub const ClickAction = enum{
     }
 };
 
+//Structures 
 pub const HoverEvent = struct{
     action: []const u8,
     value: []const u8,

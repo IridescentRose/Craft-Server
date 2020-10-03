@@ -7,6 +7,7 @@ const T = struct{
     bans: [][]const u8,
 };
 
+//Check the bans JSON for the username
 pub fn isBanned(user: []const u8) !bool{
     var inFile = try fs.cwd().openFile("bans.json", fs.File.OpenFlags{.read = true});
     defer inFile.close();
