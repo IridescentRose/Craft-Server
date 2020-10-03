@@ -20,3 +20,10 @@ pub fn encodeUTF8Str(writer: anytype, str: []const u8) !void{
         try writer.writeByte(str[i]);
     }
 }
+
+pub fn encodeJSONStr(writer: anytype, value: anytype) !void{
+    var buff2 : [std.mem.page_size]u8 = undefined;
+    var strm = std.io.fixedBufferStream(&buff2);
+    try std.json.stringify(value, std.json.StringifyOptions{}, strm.outStream());
+    try encodeUTF8Str(writer, strm.getWritten());
+}

@@ -4,6 +4,29 @@ const log = @import("log");
 const network = @import("network");
 const client = @import("client.zig");
 
+const chat = @import("chat.zig");
+const version = @import("version.zig");
+
+pub const PlayerCount = struct{
+    online: u32,
+    max: u32
+};
+
+//Information about the server
+pub const ServerInfo = struct{
+    description: chat.Text,
+    players: PlayerCount,
+    version: version.Version
+};
+
+pub var info = ServerInfo{
+    .description = chat.Text{
+        .text = "Hello world",
+    },
+    .players = PlayerCount{.online = 0, .max = 100},
+    .version = version.serverVersion,
+};
+
 //Should be running
 pub var shouldRun : bool = false;
 

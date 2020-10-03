@@ -50,6 +50,8 @@ pub fn handleHandshake(pack: *packet.Packet, clnt: *client.Client) !void{
     }
 }
 
+const server = @import("server.zig");
+
 //Handle the status request connection state
 pub fn handleStatus(pack: *packet.Packet, clnt: *client.Client) !void{
     var rd = pack.toStream().reader();
@@ -58,12 +60,10 @@ pub fn handleStatus(pack: *packet.Packet, clnt: *client.Client) !void{
     if(pack.id == 0){
         //Server Status Request Response
         log.trace("Sending Server Status!", .{});
-        var buf: []const u8 = "{\"description\":{\"text\":\"" ++ config.motd ++ "\"},\"players\":{\"max\":10,\"online\":0},\"version\":{\"name\":\"1.15.2\",\"protocol\":578}}";
-
         var buff2 : [256]u8 = undefined;
         var strm = std.io.fixedBufferStream(&buff2);
         var writ = strm.writer();
-        try encodeUTF8Str(writ, buf);
+        try encodeJSONStr(writ, server.info);
 
         //Well this is a status request - send a status back!
         try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), 0x00, clnt.compress);
@@ -103,7 +103,7 @@ pub fn handleLogin(pack: *packet.Packet, clnt: *client.Client) !void{
             log.info("Disconnecting!", .{});
             //Send disconnect packet
 
-            
+
 
             clnt.shouldClose = true;
         }
