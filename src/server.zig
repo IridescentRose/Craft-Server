@@ -66,7 +66,7 @@ pub fn update() !void {
     //Allocate a client
     const cl = try std.heap.page_allocator.create(client.Client);
     //Destroy the client when done
-    defer std.heap.page_allocator.destroy(cl);
+    //defer std.heap.page_allocator.destroy(cl);
 
     //Create a client object
     cl.* = client.Client{

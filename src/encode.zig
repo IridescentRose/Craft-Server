@@ -14,11 +14,7 @@ pub fn encodeVarInt(writer: anytype, int: usize) !void{
 //Write A VarInt prepended string
 pub fn encodeUTF8Str(writer: anytype, str: []const u8) !void{
     try encodeVarInt(writer, str.len);
-    
-    var i : usize = 0;
-    while(i < str.len) : (i += 1){
-        try writer.writeByte(str[i]);
-    }
+    try writer.writeAll(str);
 }
 
 //Write A VarInt prepended string from a given struct in JSON format

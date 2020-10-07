@@ -103,6 +103,19 @@ fn sendLoginDisconnect(reason: chat.Text, clnt: *client.Client) !void {
     clnt.shouldClose = true;
 }
 
+fn sendLoginSuccess(clnt: *client.Client) !void {
+    var buff2 : [36 + 16]u8 = undefined;
+    var strm = std.io.fixedBufferStream(&buff2);
+    var writ = strm.writer();
+    
+    try encodeUTF8Str(writ, clnt.player.uuid.id[0..]);
+    try writ.writeByte(0);
+    //try encodeUTF8Str(writ, clnt.player.username);
+    //try writ.writeByte(0);
+
+    try await async clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), 0x02, clnt.compress);
+}
+
 //Handle the beginning of the login process
 pub fn handleLogin(pack: *packet.Packet, clnt: *client.Client) !void{
     var rd = pack.toStream().reader();
@@ -126,7 +139,12 @@ pub fn handleLogin(pack: *packet.Packet, clnt: *client.Client) !void{
             if(server.info.players.online + 1 < server.info.players.max){
                 server.info.players.online += 1;
                 clnt.loggedIn = true;
-                clnt.shouldClose = true;
+                
+                clnt.player.username = user;
+                clnt.player.uuid = try @import("uuid.zig").UUID.new(@intCast(u64, std.time.timestamp()));
+                
+                try sendLoginSuccess(clnt);
+
             }else{
                 try sendLoginDisconnect(chat.Text{.text="Too many people trying to connect!", .color="green"}, clnt);
             }

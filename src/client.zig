@@ -38,6 +38,7 @@ pub const ConnectionStatus = enum(c_int) {
     }
 };
 
+const pl = @import("player.zig");
 
 //Our main client object - which handles each packet.
 pub const Client = struct {
@@ -48,6 +49,7 @@ pub const Client = struct {
     protocolVer: u32,
     shouldClose: bool,
     loggedIn: bool = false,
+    player: pl.Player = undefined,
 
     //Read a packet from the reader into an existing buffer.
     pub fn readPacket(reader: anytype, pack: *packet.Packet, compress: bool) !bool{
