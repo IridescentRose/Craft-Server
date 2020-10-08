@@ -160,7 +160,14 @@ const play = @import("play.zig");
 const gm = @import("gamemode.zig");
 pub fn postLoginTrigger(pack: *packet.Packet, clnt: *client.Client) !void {
     try play.send_join_game(pack, clnt, 0, gm.GameMode{.mode = gm.Mode.Survival, .hardcore = false}, 0, 0, "default", 8);
-    
+    try play.send_plugin_channel(pack, clnt, "minecraft:brand", "Craft-Server");
+    try play.send_server_difficulty(pack, clnt);
+    try play.send_player_abilities(pack, clnt);
+    try play.send_held_item_change(pack, clnt);
+    try play.send_set_entity_status(pack, clnt, 0, 27);
+    try play.send_player_position_look(pack, clnt, 0, 16, 0, 0, 0, 0, 1337);
+    try play.send_time_update(pack, clnt);
+    try play.send_spawn_position(pack, clnt);
 }
 
 //Generic handle all packets

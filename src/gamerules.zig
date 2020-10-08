@@ -36,7 +36,7 @@ pub const GameRules = struct{
     universalAnger: bool,
 };
 
-pub const rules = GameRules{
+pub var rules = GameRules{
     .announceAdvancements = true,
     .commandBlockOutput = true, 
     .disableElytraMovementCheck = false,
@@ -59,7 +59,7 @@ pub const rules = GameRules{
     .forgiveDeadPlayers = true,
     .keepInventory = false,
     .logAdminCommands = true,
-    .maxCommandChainLength = 65536,
+    .maxCommandChainLength = 65535,
     .maxEntityCramming = 24,
     .mobGriefing = true,
     .naturalRegeneration = true,

@@ -122,6 +122,9 @@ pub const Client = struct {
             try self.conn.getLocalEndPoint(),
         });
 
+        self.player.ability = pl.Abilities{};
+        self.player.slot = 0;
+
         //Main loop
         while (!self.shouldClose) {
             //Create a new packet instance
