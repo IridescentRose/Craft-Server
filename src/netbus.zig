@@ -156,8 +156,12 @@ pub fn handleLogin(pack: *packet.Packet, clnt: *client.Client) !void{
     }
 }
 
+
 const play = @import("play.zig");
 const gm = @import("gamemode.zig");
+
+//On login, let's set up the server! 
+//TODO: Remove all "magic" numbers
 pub fn postLoginTrigger(pack: *packet.Packet, clnt: *client.Client) !void {
     try play.send_join_game(pack, clnt, 0, gm.GameMode{.mode = gm.Mode.Survival, .hardcore = false}, 0, 0, "default", 8);
     try play.send_plugin_channel(pack, clnt, "minecraft:brand", "Craft-Server");

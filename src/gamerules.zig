@@ -1,3 +1,4 @@
+//All 1.15.2+ gamerules
 pub const GameRules = struct{
     announceAdvancements: bool,
     commandBlockOutput: bool,
@@ -36,6 +37,8 @@ pub const GameRules = struct{
     universalAnger: bool,
 };
 
+//Current rules
+//TODO: Load at startup!
 pub var rules = GameRules{
     .announceAdvancements = true,
     .commandBlockOutput = true, 

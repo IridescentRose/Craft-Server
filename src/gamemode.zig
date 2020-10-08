@@ -1,3 +1,4 @@
+//Basic GameMode structure for modes and hardcore -> int
 pub const GameMode = struct{
     const Self = @This();
     mode: Mode,
@@ -12,6 +13,7 @@ pub const GameMode = struct{
     } 
 };
 
+//Enumerated list of Game Modes
 pub const Mode =  enum(u8){
     Survival = 0,
     Creative = 1,

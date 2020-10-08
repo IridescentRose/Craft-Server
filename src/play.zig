@@ -12,6 +12,7 @@ usingnamespace @import("encode.zig");
 const gm = @import("gamemode.zig");
 const game = @import("gamerules.zig");
 
+//Packet Output Types (remappable for protocols above 578)
 pub const PacketTypeOut = enum(u8){
     ServerDifficulty = 0x0E,
     PluginMessage = 0x19,
@@ -24,13 +25,14 @@ pub const PacketTypeOut = enum(u8){
     TimeUpdate = 0x4F,
 };
 
-
+//No packet handler yet...
 pub fn handlePacket(pack: *packet.Packet, clnt: *client.Client) !void {
     //log.err("PLAY RECEIVED - NOT HANDLED", .{});
     //clnt.shouldClose = true;
 }
 
-pub fn send_join_game(pack: *packet.Packet, clnt: *client.Client, eid: i32, gamemode: gm.GameMode, dimension: i32, hashseed: u64, lvlType: []const u8, viewDist: u8) !void {
+//Sends a Join Game packet for the current player and world
+pub fn send_join_game(clnt: *client.Client, eid: i32, gamemode: gm.GameMode, dimension: i32, hashseed: u64, lvlType: []const u8, viewDist: u8) !void {
     var buff2 : [128]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buff2);
     var writ = strm.writer();
@@ -48,7 +50,8 @@ pub fn send_join_game(pack: *packet.Packet, clnt: *client.Client, eid: i32, game
     try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), @enumToInt(PacketTypeOut.JoinGame), clnt.compress);
 }
 
-pub fn send_plugin_channel(pack: *packet.Packet, clnt: *client.Client, channel: []const u8, data: []const u8) !void {
+//Sends a plugin message to the given client
+pub fn send_plugin_channel(clnt: *client.Client, channel: []const u8, data: []const u8) !void {
     var buff : [128]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buff);
     var writ = strm.writer();
@@ -60,7 +63,8 @@ pub fn send_plugin_channel(pack: *packet.Packet, clnt: *client.Client, channel: 
 }
 
 const diff = @import("difficulty.zig");
-pub fn send_server_difficulty(pack: *packet.Packet, clnt: *client.Client) !void {
+//Sends the current server difficulty
+pub fn send_server_difficulty(clnt: *client.Client) !void {
     var buf : [16]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buf);
     var writ = strm.writer();
@@ -70,7 +74,8 @@ pub fn send_server_difficulty(pack: *packet.Packet, clnt: *client.Client) !void 
     try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), @enumToInt(PacketTypeOut.ServerDifficulty), clnt.compress);
 }
 
-pub fn send_player_abilities(pack: *packet.Packet, clnt: *client.Client) !void {
+//Sends the player abilities
+pub fn send_player_abilities(clnt: *client.Client) !void {
     var buf : [16]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buf);
     var writ = strm.writer();
@@ -82,6 +87,7 @@ pub fn send_player_abilities(pack: *packet.Packet, clnt: *client.Client) !void {
     try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), @enumToInt(PacketTypeOut.PlayerAbilities), clnt.compress);
 }
 
+//Sends the held item change
 pub fn send_held_item_change(pack: *packet.Packet, clnt: *client.Client) !void{
     var buf : [16]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buf);
@@ -91,6 +97,7 @@ pub fn send_held_item_change(pack: *packet.Packet, clnt: *client.Client) !void{
     try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), @enumToInt(PacketTypeOut.HeldItemChange), clnt.compress);
 }
 
+//Sends an entity status
 pub fn send_set_entity_status(pack: *packet.Packet, clnt: *client.Client, eid: i32, status: u8) !void {
     var buf : [16]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buf);
@@ -102,6 +109,7 @@ pub fn send_set_entity_status(pack: *packet.Packet, clnt: *client.Client, eid: i
     try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), @enumToInt(PacketTypeOut.EntityStatus), clnt.compress);
 }
 
+//Sends a player position & look with TP ID
 pub fn send_player_position_look(pack: *packet.Packet, clnt: *client.Client, x: f64, y: f64, z: f64, yaw: f32, pitch: f32, flags: u8, tpID: usize) !void{
     var buf : [40]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buf);
@@ -121,6 +129,7 @@ pub fn send_player_position_look(pack: *packet.Packet, clnt: *client.Client, x: 
 }
 
 const time = @import("time.zig");
+//Sends current world time
 pub fn send_time_update(pack: *packet.Packet, clnt: *client.Client) !void{
     var buf : [16]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buf);
@@ -132,12 +141,13 @@ pub fn send_time_update(pack: *packet.Packet, clnt: *client.Client) !void{
     try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), @enumToInt(PacketTypeOut.TimeUpdate), clnt.compress);
 }
 
+//Sends default spawn position of 0, 63, 0
 pub fn send_spawn_position(pack: *packet.Packet, clnt: *client.Client) !void{
     var buf : [16]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buf);
     var writ = strm.writer();
 
-    try writ.writeIntBig(u64, @import("position.zig").getPosition(0, 64, 0));
+    try writ.writeIntBig(u64, @import("position.zig").getPosition(0, 63, 0));
 
     try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), @enumToInt(PacketTypeOut.SpawnPosition), clnt.compress);
 }

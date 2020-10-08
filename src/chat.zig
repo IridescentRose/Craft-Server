@@ -55,6 +55,7 @@ pub const HoverAction = enum{
     }
 };
 
+//Color enum
 pub const Color = enum{
     const Self = @This();
     Black = 0,
@@ -96,6 +97,7 @@ pub const Color = enum{
     }
 };
 
+//Different styles
 pub const Style = enum{
     const Self = @This();
     Obfuscated,

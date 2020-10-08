@@ -1,3 +1,4 @@
+//Basic UUID generation
 const std = @import("std");
 
 const chars : []const u8 = "0123456789ABCDEF";
