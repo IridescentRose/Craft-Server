@@ -110,8 +110,9 @@ fn sendLoginSuccess(clnt: *client.Client) !void {
     
     try encodeUTF8Str(writ, clnt.player.uuid.id[0..]);
     try writ.writeByte(0);
-    //try encodeUTF8Str(writ, clnt.player.username);
-    //try writ.writeByte(0);
+    
+    //Swap to playstate
+    clnt.status = client.ConnectionStatus.Play;
 
     try await async clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), 0x02, clnt.compress);
 }
@@ -145,11 +146,21 @@ pub fn handleLogin(pack: *packet.Packet, clnt: *client.Client) !void{
                 
                 try sendLoginSuccess(clnt);
 
+                //Trigger play actions
+                try postLoginTrigger(pack, clnt);
+
             }else{
                 try sendLoginDisconnect(chat.Text{.text="Too many people trying to connect!", .color="green"}, clnt);
             }
         }
     }
+}
+
+const play = @import("play.zig");
+const gm = @import("gamemode.zig");
+pub fn postLoginTrigger(pack: *packet.Packet, clnt: *client.Client) !void {
+    try play.send_join_game(pack, clnt, 0, gm.GameMode{.mode = gm.Mode.Survival, .hardcore = false}, 0, 0, "default", 8, false);
+    
 }
 
 //Generic handle all packets
@@ -173,8 +184,7 @@ pub fn handlePacket(pack: *packet.Packet, clnt: *client.Client) !void{
 
         .Play => {
             //Handle play
-            log.err("PLAY RECEIVED - NOT HANDLED", .{});
-            clnt.shouldClose = true;
+            try play.handlePacket(pack, clnt);
         }
     }
 }
