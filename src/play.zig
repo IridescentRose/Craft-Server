@@ -88,7 +88,7 @@ pub fn send_player_abilities(clnt: *client.Client) !void {
 }
 
 //Sends the held item change
-pub fn send_held_item_change(pack: *packet.Packet, clnt: *client.Client) !void{
+pub fn send_held_item_change(clnt: *client.Client) !void{
     var buf : [16]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buf);
     var writ = strm.writer();
@@ -98,7 +98,7 @@ pub fn send_held_item_change(pack: *packet.Packet, clnt: *client.Client) !void{
 }
 
 //Sends an entity status
-pub fn send_set_entity_status(pack: *packet.Packet, clnt: *client.Client, eid: i32, status: u8) !void {
+pub fn send_set_entity_status(clnt: *client.Client, eid: i32, status: u8) !void {
     var buf : [16]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buf);
     var writ = strm.writer();
@@ -110,7 +110,7 @@ pub fn send_set_entity_status(pack: *packet.Packet, clnt: *client.Client, eid: i
 }
 
 //Sends a player position & look with TP ID
-pub fn send_player_position_look(pack: *packet.Packet, clnt: *client.Client, x: f64, y: f64, z: f64, yaw: f32, pitch: f32, flags: u8, tpID: usize) !void{
+pub fn send_player_position_look(clnt: *client.Client, x: f64, y: f64, z: f64, yaw: f32, pitch: f32, flags: u8, tpID: usize) !void{
     var buf : [40]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buf);
     var writ = strm.writer();
@@ -130,7 +130,7 @@ pub fn send_player_position_look(pack: *packet.Packet, clnt: *client.Client, x: 
 
 const time = @import("time.zig");
 //Sends current world time
-pub fn send_time_update(pack: *packet.Packet, clnt: *client.Client) !void{
+pub fn send_time_update(clnt: *client.Client) !void{
     var buf : [16]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buf);
     var writ = strm.writer();
@@ -142,7 +142,7 @@ pub fn send_time_update(pack: *packet.Packet, clnt: *client.Client) !void{
 }
 
 //Sends default spawn position of 0, 63, 0
-pub fn send_spawn_position(pack: *packet.Packet, clnt: *client.Client) !void{
+pub fn send_spawn_position(clnt: *client.Client) !void{
     var buf : [16]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buf);
     var writ = strm.writer();
