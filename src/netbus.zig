@@ -159,7 +159,7 @@ pub fn handleLogin(pack: *packet.Packet, clnt: *client.Client) !void{
 const play = @import("play.zig");
 const gm = @import("gamemode.zig");
 pub fn postLoginTrigger(pack: *packet.Packet, clnt: *client.Client) !void {
-    try play.send_join_game(pack, clnt, 0, gm.GameMode{.mode = gm.Mode.Survival, .hardcore = false}, 0, 0, "default", 8, false);
+    try play.send_join_game(pack, clnt, 0, gm.GameMode{.mode = gm.Mode.Survival, .hardcore = false}, 0, 0, "default", 8);
     
 }
 

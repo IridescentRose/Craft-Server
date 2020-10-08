@@ -10,6 +10,7 @@ usingnamespace @import("decode.zig");
 usingnamespace @import("encode.zig");
 
 const gm = @import("gamemode.zig");
+const game = @import("gamerules.zig");
 
 pub const PacketTypeOut = enum(u8){
     JoinGame = 0x26,
@@ -21,7 +22,7 @@ pub fn handlePacket(pack: *packet.Packet, clnt: *client.Client) !void {
     //clnt.shouldClose = true;
 }
 
-pub fn send_join_game(pack: *packet.Packet, clnt: *client.Client, eid: i32, gamemode: gm.GameMode, dimension: i32, hashseed: u64, lvlType: []const u8, viewDist: u8, enableRespawn: bool) !void {
+pub fn send_join_game(pack: *packet.Packet, clnt: *client.Client, eid: i32, gamemode: gm.GameMode, dimension: i32, hashseed: u64, lvlType: []const u8, viewDist: u8) !void {
     var buff2 : [128]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buff2);
     var writ = strm.writer();
@@ -33,8 +34,8 @@ pub fn send_join_game(pack: *packet.Packet, clnt: *client.Client, eid: i32, game
     try writ.writeByte(0); //Ignored
     try encodeUTF8Str(writ, lvlType);
     try writ.writeIntBig(u8, viewDist);
-    try writ.writeByte(@boolToInt(false));
-    try writ.writeByte(@boolToInt(enableRespawn));
+    try writ.writeByte(@boolToInt(game.rules.reducedDebugInfo));
+    try writ.writeByte(@boolToInt(game.rules.doImmediateRespawn));
 
     //0x00 is DC
     try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), @enumToInt(PacketTypeOut.JoinGame), clnt.compress);
