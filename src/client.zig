@@ -1,8 +1,10 @@
 const std = @import("std");
+const time = std.time;
 const log = @import("log");
 const network = @import("network");
 const netbus = @import("netbus.zig");
 
+const playState = @import("play.zig");
 const packet = @import("packet.zig");
 const server = @import("server.zig");
 usingnamespace @import("decode.zig");
@@ -29,7 +31,7 @@ pub const ConnectionStatus = enum(c_int) {
     }
 
     pub fn toValue(self: Self) c_int {
-        return switch (self){
+        return switch (self) {
             ConnectionStatus.Handshake => 0,
             ConnectionStatus.Status => 1,
             ConnectionStatus.Login => 2,
@@ -50,28 +52,29 @@ pub const Client = struct {
     shouldClose: bool,
     loggedIn: bool = false,
     player: pl.Player = undefined,
+    keepAliveTimer: time.Timer = undefined,
 
     //Read a packet from the reader into an existing buffer.
-    pub fn readPacket(reader: anytype, pack: *packet.Packet, compress: bool) !bool{
-        var size : u32 = try decodeVarInt(reader);
+    pub fn readPacket(reader: anytype, pack: *packet.Packet, compress: bool) !bool {
+        var size: u32 = try decodeVarInt(reader);
 
         //Check the size
-        if (size == 0){
+        if (size == 0) {
             return false;
         }
 
         pack.buffer = [_]u8{0} ** 512;
 
         //Read into buffer
-        var i : usize = 0;
-        while(i < size) : (i += 1){
+        var i: usize = 0;
+        while (i < size) : (i += 1) {
             pack.buffer[i] = try reader.readByte();
         }
         pack.size = size;
 
-        if(compress){
+        if (compress) {
             log.fatal("COMPRESSION DISABLED!", .{});
-        }else{
+        } else {
             pack.id = try pack.toStream().reader().readByte();
         }
 
@@ -79,7 +82,7 @@ pub const Client = struct {
     }
 
     //Send a packet from the buffer to the socket.
-    pub fn sendPacket(self: *Client, writer: anytype, buf: []u8, id: u8, compress: bool) !void{
+    pub fn sendPacket(self: *Client, writer: anytype, buf: []u8, id: u8, compress: bool) !void {
 
         //Allocate our full packet buffer and free it after
         var buffer = try std.heap.page_allocator.alloc(u8, buf.len + 1 + 1 + 5);
@@ -94,8 +97,8 @@ pub const Client = struct {
         try writ.writeByte(id);
 
         //Write the rest of the buffer
-        var i : usize = 0;
-        while(i < buf.len) : (i += 1){
+        var i: usize = 0;
+        while (i < buf.len) : (i += 1) {
             try writ.writeByte(buf[i]);
         }
 
@@ -104,9 +107,9 @@ pub const Client = struct {
     }
 
     //Disconnect the player and reduce count.
-    pub fn disconnect(self: *Client) !void{
-        log.info("Closed connection from {}",.{try self.conn.getLocalEndPoint()});
-        if(self.loggedIn){
+    pub fn disconnect(self: *Client) !void {
+        log.info("Closed connection from {}", .{try self.conn.getLocalEndPoint()});
+        if (self.loggedIn) {
             server.info.players.online -= 1;
         }
         self.conn.close();
@@ -118,6 +121,8 @@ pub const Client = struct {
         self.shouldClose = false;
         self.status = ConnectionStatus.Handshake;
 
+        self.keepAliveTimer = try time.Timer.start();
+
         log.info("Client connected from {}", .{
             try self.conn.getLocalEndPoint(),
         });
@@ -127,14 +132,20 @@ pub const Client = struct {
 
         //Main loop
         while (!self.shouldClose) {
+            //Check for keepalive time
+            if (self.keepAliveTimer.read() / time.ns_per_s >= 1 and self.status == ConnectionStatus.Play) {
+                self.keepAliveTimer.reset();
+                try playState.send_keep_alive(self, 1337);
+            }
+
             //Create a new packet instance
             const reader = self.conn.reader();
-            
+
             const pck = try std.heap.page_allocator.create(packet.Packet);
             defer std.heap.page_allocator.destroy(pck);
             pck.* = packet.Packet{
                 .buffer = undefined,
-                .size = 0
+                .size = 0,
             };
 
             //Read packet
