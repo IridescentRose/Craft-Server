@@ -12,11 +12,15 @@ usingnamespace @import("encode.zig");
 const gm = @import("gamemode.zig");
 const game = @import("gamerules.zig");
 
+const chat = @import("chat.zig");
+
 //Packet Output Types (remappable for protocols above 578)
-pub const PacketTypeOut = enum(u8){
+pub const PacketTypeOut = enum(u8) {
     ServerDifficulty = 0x0E,
+    ChatMessage = 0x0F,
     PluginMessage = 0x19,
     EntityStatus = 0x1C,
+    KeepAlive = 0x21,
     JoinGame = 0x26,
     PlayerAbilities = 0x32,
     PlayerPositionLook = 0x36,
@@ -25,15 +29,146 @@ pub const PacketTypeOut = enum(u8){
     TimeUpdate = 0x4F,
 };
 
+pub const PacketTypeIn = enum(u8) {
+    TeleportConfirm = 0x00,
+    QueryBlockNBT = 0x01,
+    SetDifficulty = 0x02,
+    ChatMessage = 0x03,
+    ClientStatus = 0x04,
+    ClientSettings = 0x05,
+    TabComplete = 0x06,
+    WindowConfirmation = 0x07,
+    ClickWindowButton = 0x08,
+    ClickWindow = 0x09,
+    CloseWindow = 0x0A,
+    PluginMessage = 0x0B,
+    EditBook = 0x0C,
+    QueryEntityNBT = 0x0D,
+    InteractEntity = 0x0E,
+    KeepAlive = 0x0F,
+    LockDifficulty = 0x10,
+    PlayerPosition = 0x11,
+    PlayerPositionAndRotation = 0x12,
+    PlayerRotation = 0x13,
+    PlayerMovement = 0x14,
+    VehicleMove = 0x15,
+    SteerBoat = 0x16,
+    PickItem = 0x17,
+    CraftRecipeRequest = 0x18,
+    PlayerAbilities = 0x19,
+    PlayerDigging = 0x1A,
+    EntityAction = 0x1B,
+    SteerVehicle = 0x1C,
+    RecipeBookData = 0x1D,
+    NameItem = 0x1E,
+    ResourcePackStatus = 0x1F,
+    AdvancementTab = 0x20,
+    SelectTrade = 0x21,
+    SetBeaconEffect = 0x22,
+    HeldItemChange = 0x23,
+    UpdateCommandBlock = 0x24,
+    UpdateCommandBlockMinecart = 0x25,
+    CreativeInventoryAction = 0x26,
+    UpdateJigsawBlock = 0x27,
+    UpdateStructureBlock = 0x28,
+    UpdateSign = 0x29,
+    Animation = 0x2A,
+    Spectate = 0x2B,
+    PlayerBlockPlacement = 0x2C,
+    UseItem = 0x2D,
+};
+
 //No packet handler yet...
 pub fn handlePacket(pack: *packet.Packet, clnt: *client.Client) !void {
     //log.err("PLAY RECEIVED - NOT HANDLED", .{});
     //clnt.shouldClose = true;
+    var rd = pack.toStream().reader();
+    try rd.skipBytes(1, .{});
+
+    switch (@intToEnum(PacketTypeIn, pack.id)) {
+        .KeepAlive => {
+            try handle_keep_alive(rd, clnt);
+        },
+
+        .ChatMessage => {
+            try handle_chat_packet(rd, clnt);
+        },
+
+        .PluginMessage => {
+            try handle_plugin_message(rd, clnt);
+        },
+
+        .TeleportConfirm => {
+            try handle_tp_confirm(rd, clnt);
+        },
+
+        else => {
+            try handle_dummy(pack, clnt);
+        },
+    }
+}
+
+//Handles keep alive - does an error print if it's the wrong ID
+pub fn handle_keep_alive(rd: anytype, clnt: *client.Client) !void {
+    var id = try rd.readIntBig(u64);
+    if (id != 1337) {
+        log.err("BAD KEEPALIVE {}", .{id});
+    }
+}
+
+pub fn handle_tp_confirm(rd: anytype, clnt: *client.Client) !void {
+    var int = try decodeVarInt(rd);
+    log.debug("TODO: Implement TP confirm system. ID {}", .{int});
+}
+
+//Output the chat Json
+pub fn handle_chat_packet(rd: anytype, clnt: *client.Client) !void {
+    var str = try decodeUTF8Str(rd);
+
+    if (str[0] == '/') {
+        log.warn("Command Requested - Subsystem does not exist", .{});
+        try send_chat_packet(clnt, chat.Text{ .text = "[Server] Found Command - Requested Subsystem Does Not Exist.", .color = "dark_red" });
+    } else {
+        //Send chat packet
+        var text = try std.mem.concat(std.heap.page_allocator, u8, &[_][]const u8{
+            clnt.player.username,
+            ": ",
+            str,
+        });
+        log.info("{}", .{text});
+        var c = chat.Text{ .text = text, .color = "white" };
+        try send_chat_packet(clnt, c);
+        std.heap.page_allocator.free(text);
+    }
+}
+
+//Send message in log for plugin message. We don't use these.
+pub fn handle_plugin_message(rd: anytype, clnt: *client.Client) !void {
+    var str = try decodeUTF8Str(rd);
+    log.trace("Received plugin message: {}", .{str});
+}
+
+//Dummy handler for what we haven't yet handled!
+pub fn handle_dummy(pack: *packet.Packet, clnt: *client.Client) !void {
+    log.warn("RECIEVED UNKNOWN PACKET {}", .{pack.id});
+    log.warn("ENUM TYPE {}", .{@intToEnum(PacketTypeIn, pack.id)});
+}
+
+//Chat packet
+pub fn send_chat_packet(clnt: *client.Client, cht: chat.Text) !void {
+    var buff2: [1024]u8 = undefined;
+    var strm = std.io.fixedBufferStream(&buff2);
+    var writ = strm.writer();
+
+    try encodeJSONStr(writ, cht);
+    try writ.writeByte(0);
+
+    try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), @enumToInt(PacketTypeOut.ChatMessage), clnt.compress);
 }
 
 //Sends a Join Game packet for the current player and world
 pub fn send_join_game(clnt: *client.Client, eid: i32, gamemode: gm.GameMode, dimension: i32, hashseed: u64, lvlType: []const u8, viewDist: u8) !void {
-    var buff2 : [128]u8 = undefined;
+    var buff2: [128]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buff2);
     var writ = strm.writer();
 
@@ -52,7 +187,7 @@ pub fn send_join_game(clnt: *client.Client, eid: i32, gamemode: gm.GameMode, dim
 
 //Sends a plugin message to the given client
 pub fn send_plugin_channel(clnt: *client.Client, channel: []const u8, data: []const u8) !void {
-    var buff : [128]u8 = undefined;
+    var buff: [128]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buff);
     var writ = strm.writer();
 
@@ -65,7 +200,7 @@ pub fn send_plugin_channel(clnt: *client.Client, channel: []const u8, data: []co
 const diff = @import("difficulty.zig");
 //Sends the current server difficulty
 pub fn send_server_difficulty(clnt: *client.Client) !void {
-    var buf : [16]u8 = undefined;
+    var buf: [16]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buf);
     var writ = strm.writer();
 
@@ -76,7 +211,7 @@ pub fn send_server_difficulty(clnt: *client.Client) !void {
 
 //Sends the player abilities
 pub fn send_player_abilities(clnt: *client.Client) !void {
-    var buf : [16]u8 = undefined;
+    var buf: [16]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buf);
     var writ = strm.writer();
 
@@ -88,8 +223,8 @@ pub fn send_player_abilities(clnt: *client.Client) !void {
 }
 
 //Sends the held item change
-pub fn send_held_item_change(clnt: *client.Client) !void{
-    var buf : [16]u8 = undefined;
+pub fn send_held_item_change(clnt: *client.Client) !void {
+    var buf: [16]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buf);
     var writ = strm.writer();
 
@@ -99,7 +234,7 @@ pub fn send_held_item_change(clnt: *client.Client) !void{
 
 //Sends an entity status
 pub fn send_set_entity_status(clnt: *client.Client, eid: i32, status: u8) !void {
-    var buf : [16]u8 = undefined;
+    var buf: [16]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buf);
     var writ = strm.writer();
 
@@ -110,15 +245,15 @@ pub fn send_set_entity_status(clnt: *client.Client, eid: i32, status: u8) !void 
 }
 
 //Sends a player position & look with TP ID
-pub fn send_player_position_look(clnt: *client.Client, x: f64, y: f64, z: f64, yaw: f32, pitch: f32, flags: u8, tpID: usize) !void{
-    var buf : [40]u8 = undefined;
+pub fn send_player_position_look(clnt: *client.Client, x: f64, y: f64, z: f64, yaw: f32, pitch: f32, flags: u8, tpID: usize) !void {
+    var buf: [40]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buf);
     var writ = strm.writer();
 
     try writ.writeIntBig(u64, @bitCast(u64, x));
     try writ.writeIntBig(u64, @bitCast(u64, y));
     try writ.writeIntBig(u64, @bitCast(u64, z));
-    
+
     try writ.writeIntBig(u32, @bitCast(u32, yaw));
     try writ.writeIntBig(u32, @bitCast(u32, pitch));
 
@@ -130,8 +265,8 @@ pub fn send_player_position_look(clnt: *client.Client, x: f64, y: f64, z: f64, y
 
 const time = @import("time.zig");
 //Sends current world time
-pub fn send_time_update(clnt: *client.Client) !void{
-    var buf : [16]u8 = undefined;
+pub fn send_time_update(clnt: *client.Client) !void {
+    var buf: [16]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buf);
     var writ = strm.writer();
 
@@ -142,12 +277,22 @@ pub fn send_time_update(clnt: *client.Client) !void{
 }
 
 //Sends default spawn position of 0, 63, 0
-pub fn send_spawn_position(clnt: *client.Client) !void{
-    var buf : [16]u8 = undefined;
+pub fn send_spawn_position(clnt: *client.Client) !void {
+    var buf: [16]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buf);
     var writ = strm.writer();
 
     try writ.writeIntBig(u64, @import("position.zig").getPosition(0, 63, 0));
 
     try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), @enumToInt(PacketTypeOut.SpawnPosition), clnt.compress);
+}
+
+//Send keep alive with ID
+pub fn send_keep_alive(clnt: *client.Client, id: u64) !void {
+    var buf: [16]u8 = undefined;
+    var strm = std.io.fixedBufferStream(&buf);
+    var writ = strm.writer();
+
+    try writ.writeIntBig(u64, id);
+    try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), @enumToInt(PacketTypeOut.KeepAlive), clnt.compress);
 }
