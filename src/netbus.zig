@@ -172,6 +172,7 @@ pub fn postLoginTrigger(pack: *packet.Packet, clnt: *client.Client) !void {
     try play.send_player_position_look(clnt, 0, 16, 0, 0, 0, 0, 1337);
     try play.send_time_update(clnt);
     try play.send_spawn_position(clnt);
+    try play.send_chunk(clnt);
 }
 
 //Generic handle all packets

@@ -4,6 +4,7 @@ const log = @import("log");
 const packet = @import("packet.zig");
 const client = @import("client.zig");
 const config = @import("config.zig");
+pub const send_chunk = @import("chunkSerializer.zig").send_chunk;
 
 //Encode / Decode support
 usingnamespace @import("decode.zig");
