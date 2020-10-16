@@ -159,7 +159,8 @@ pub fn handleLogin(pack: *packet.Packet, clnt: *client.Client) !void{
 
 const play = @import("play.zig");
 const gm = @import("gamemode.zig");
-
+const Chunk = @import("chunk.zig");
+const ChunkSect = @import("chunksect.zig");
 //On login, let's set up the server! 
 //TODO: Remove all "magic" numbers
 pub fn postLoginTrigger(pack: *packet.Packet, clnt: *client.Client) !void {
@@ -169,10 +170,25 @@ pub fn postLoginTrigger(pack: *packet.Packet, clnt: *client.Client) !void {
     try play.send_player_abilities(clnt);
     try play.send_held_item_change(clnt);
     try play.send_set_entity_status(clnt, 0, 27);
-    try play.send_player_position_look(clnt, 0, 16, 0, 0, 0, 0, 1337);
+    try play.send_player_position_look(clnt, 8, 16, 8, 0, 0, 0, 1337);
     try play.send_time_update(clnt);
     try play.send_spawn_position(clnt);
-    try play.send_chunk(clnt);
+
+    var demoChunk : *Chunk = try std.heap.page_allocator.create(Chunk);
+    demoChunk.chunk_x = 0;
+    demoChunk.chunk_z = 0;
+    std.mem.set(i32, demoChunk.biomeDesc[0..], 1);
+    std.mem.set(i64, demoChunk.heightMap[0..], 2);
+    @memset(@ptrCast([*]u8, &demoChunk.chunkList), 0, @sizeOf(?*Chunk) * 16);
+
+    demoChunk.chunkList[0] = try std.heap.page_allocator.create(ChunkSect);
+    demoChunk.chunkList[0].?.chunk_x = 0;
+    demoChunk.chunkList[0].?.chunk_y = 0;
+    demoChunk.chunkList[0].?.chunk_z = 0;
+    demoChunk.chunkList[0].?.block_count = 4096;
+    std.mem.set(u16, demoChunk.chunkList[0].?.block_data[0..], 1);
+ 
+    try play.send_chunk(clnt, demoChunk);
 }
 
 //Generic handle all packets

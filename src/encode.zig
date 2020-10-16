@@ -4,11 +4,30 @@ const log = @import("log");
 //A basic VarInt Writer
 pub fn encodeVarInt(writer: anytype, int: usize) !void{
     var intTemp = int;
-    while(intTemp & 0b10000000 > 0){
-        try writer.writeByte( @truncate(u8, (intTemp & 0xFF) | 0x80));
+
+    //Fixed implementation
+    var b: [5]u8 = [_]u8{0} ** 5;
+    var idx: usize = 0;
+
+    if(intTemp > 0x7f){
+        b[idx] = (@truncate(u8, intTemp) & 0x7f) | 0x80;
+    }else{
+        b[idx] = (@truncate(u8, intTemp) & 0x7f) | 0x00;
+    }
+    idx += 1;
+    intTemp = intTemp >> 7;
+
+    while(intTemp > 0){
+        if(intTemp > 0x7f){
+        b[idx] = (@truncate(u8, intTemp) & 0x7f) | 0x80;
+        }else{
+            b[idx] = (@truncate(u8, intTemp) & 0x7f) | 0x00;
+        }
+        idx += 1;
         intTemp = intTemp >> 7;
     }
-    try writer.writeByte(@truncate(u8,intTemp));
+
+    try writer.writeAll(b[0..idx]);
 }
 
 //Write A VarInt prepended string
