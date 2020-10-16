@@ -83,6 +83,51 @@ pub fn serializeChunkSect(strm: anytype, chunk: *ChunkSect) !void{
     try writ.writeIntBig(u64, tempLong);
 }
 
+pub fn send_light(clnt: *client.Client, chunk: *Chunk) !void{
+    var buf = try std.heap.page_allocator.alloc(u8, 8192);
+    defer std.heap.page_allocator.free(buf);
+
+    var strm = std.io.fixedBufferStream(buf);
+    var writ = strm.writer();
+
+    var cx : u32 = @bitCast(u32, chunk.chunk_x);
+    if(chunk.chunk_x < 0){
+        cx = ~cx;
+    }
+    var cz : u32 = @bitCast(u32, chunk.chunk_z);
+    if(chunk.chunk_z < 0){
+        cz = ~cz;
+    }
+    try encodeVarInt(writ, cx);
+    try encodeVarInt(writ, cz);
+
+    //Sk mask
+    try encodeVarInt(writ, 2);
+    //Bl mask
+    try encodeVarInt(writ, 2);
+
+    //ESk mask
+    try encodeVarInt(writ, 0);
+    //EBl mask
+    try encodeVarInt(writ, 0);
+
+    //Sk Arrays
+    try encodeVarInt(writ, 2048);
+    var i : usize = 0;
+    while(i < 2048) : (i += 1){
+        try writ.writeByte(0xff);
+    }
+    
+    //Bl Arrays 
+    try encodeVarInt(writ, 2048);
+    i = 0;
+    while(i < 2048) : (i += 1){
+        try writ.writeByte(0xff);
+    }
+
+    try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), 0x25, clnt.compress);
+}
+
 pub fn send_chunk(clnt: *client.Client, chunk: *Chunk) !void {
     const bitsperblock = 14;
     const csdataarraysize = 16 * 16 * 16 * bitsperblock / 8 / 8;

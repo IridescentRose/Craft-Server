@@ -5,6 +5,7 @@ const packet = @import("packet.zig");
 const client = @import("client.zig");
 const config = @import("config.zig");
 pub const send_chunk = @import("chunkSerializer.zig").send_chunk;
+pub const send_light = @import("chunkSerializer.zig").send_light;
 
 //Encode / Decode support
 usingnamespace @import("decode.zig");
@@ -25,6 +26,7 @@ pub const PacketTypeOut = enum(u8) {
     JoinGame = 0x26,
     PlayerAbilities = 0x32,
     PlayerPositionLook = 0x36,
+    WorldBorder = 0x3E,
     HeldItemChange = 0x40,
     SpawnPosition = 0x4E,
     TimeUpdate = 0x4F,
@@ -305,6 +307,29 @@ pub fn send_player_abilities(clnt: *client.Client) !void {
 
     try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), @enumToInt(PacketTypeOut.PlayerAbilities), clnt.compress);
 }
+
+pub fn send_world_border(clnt: *client.Client, x: f64, z: f64, od: f64, nd: f64, speed: usize, portalTPB: usize, warn: usize, warnBlk: usize) !void {
+    var buf: [128]u8 = undefined;
+    var strm = std.io.fixedBufferStream(&buf);
+    var writ = strm.writer();
+
+    try writ.writeByte(3);
+
+    try writ.writeIntBig(i64, @bitCast(i64, x));
+    try writ.writeIntBig(i64, @bitCast(i64, z));
+
+    try writ.writeIntBig(i64, @bitCast(i64, od));
+    try writ.writeIntBig(i64, @bitCast(i64, nd));
+
+    try encodeVarInt(writ, speed);
+    try encodeVarInt(writ, portalTPB);
+
+    try encodeVarInt(writ, warn);
+    try encodeVarInt(writ, warnBlk);
+
+    try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), @enumToInt(PacketTypeOut.WorldBorder), clnt.compress);
+}
+
 
 //Sends the held item change
 pub fn send_held_item_change(clnt: *client.Client) !void {

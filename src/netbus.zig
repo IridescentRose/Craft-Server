@@ -170,9 +170,6 @@ pub fn postLoginTrigger(pack: *packet.Packet, clnt: *client.Client) !void {
     try play.send_player_abilities(clnt);
     try play.send_held_item_change(clnt);
     try play.send_set_entity_status(clnt, 0, 27);
-    try play.send_player_position_look(clnt, 8, 16, 8, 0, 0, 0, 1337);
-    try play.send_time_update(clnt);
-    try play.send_spawn_position(clnt);
 
     var demoChunk : *Chunk = try std.heap.page_allocator.create(Chunk);
     demoChunk.chunk_x = 0;
@@ -222,16 +219,33 @@ pub fn postLoginTrigger(pack: *packet.Packet, clnt: *client.Client) !void {
     demoChunk.chunkList[0].?.chunk_x = 0;
     demoChunk.chunkList[0].?.chunk_y = 0;
     demoChunk.chunkList[0].?.chunk_z = 0;
-    demoChunk.chunkList[0].?.block_count = 0;
-    std.mem.set(u16, demoChunk.chunkList[0].?.block_data[0..], 1);
+    demoChunk.chunkList[0].?.block_count = 4096 - 256;
+    std.mem.set(u16, demoChunk.chunkList[0].?.block_data[0..], 32);
 
     i = 0;
     while(i < 256): (i += 1){
         demoChunk.chunkList[0].?.block_data[4096 - 256] = 0;
     }
  
-    try play.send_chunk(clnt, demoChunk);
+    var x : i32 = -3;
+    while(x <= 3) : (x += 1){
+        var z : i32 = -3;
+        while(z <= 3) : (z += 1){
+            demoChunk.chunk_x = x;
+            demoChunk.chunk_z = z;
+            
+            try play.send_chunk(clnt, demoChunk);
+            try play.send_light(clnt, demoChunk);
+        }
+    }
+
+    try play.send_world_border(clnt, 0, 0, 60000000.0, 60000000.0, 0, 29999984, 5, 15);
+
+    try play.send_player_position_look(clnt, 8, 257, 8, 0, 0, 0, 1337);
+    try play.send_time_update(clnt);
+    try play.send_spawn_position(clnt);
 }
+
 
 //Generic handle all packets
 pub fn handlePacket(pack: *packet.Packet, clnt: *client.Client) !void{
