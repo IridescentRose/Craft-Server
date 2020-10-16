@@ -30,7 +30,7 @@ pub fn handleHandshake(pack: *packet.Packet, clnt: *client.Client) !void{
         log.trace("Requested State: {}", .{@intToEnum(client.ConnectionStatus, state).toString()});
 
         //Verification check... protocol versions must match!
-        if(protocol != 578){
+        if(protocol != 753){
             log.err("Connection attempted with incompatible version! Protocol ID {}", .{protocol});
             if(@intToEnum(client.ConnectionStatus, state) == client.ConnectionStatus.Login){
                 log.err("Is login request... Disconnecting...", .{});
@@ -104,13 +104,12 @@ fn sendLoginDisconnect(reason: chat.Text, clnt: *client.Client) !void {
 }
 
 fn sendLoginSuccess(clnt: *client.Client) !void {
-    var buff2 : [36 + 16]u8 = undefined;
+    var buff2 : [128]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buff2);
     var writ = strm.writer();
     
-    try encodeUTF8Str(writ, clnt.player.uuid.id[0..]);
-    try writ.writeByte(0);
-    
+    try writ.writeIntBig(u128, clnt.player.uuid.id);
+    try encodeUTF8Str(writ, clnt.player.username[0..]);
     //Swap to playstate
     clnt.status = client.ConnectionStatus.Play;
 
@@ -142,7 +141,10 @@ pub fn handleLogin(pack: *packet.Packet, clnt: *client.Client) !void{
                 clnt.loggedIn = true;
                 
                 clnt.player.username = user;
-                clnt.player.uuid = try @import("uuid.zig").UUID.new(@intCast(u64, std.time.timestamp()));
+
+                var r = std.rand.DefaultPrng.init(@bitCast(u64, std.time.timestamp()));
+
+                clnt.player.uuid = @import("uuid.zig").newv4(&r.random);
                 
                 try sendLoginSuccess(clnt);
 
@@ -165,85 +167,86 @@ const ChunkSect = @import("chunksect.zig");
 //TODO: Remove all "magic" numbers
 pub fn postLoginTrigger(pack: *packet.Packet, clnt: *client.Client) !void {
     try play.send_join_game(clnt, 0, gm.GameMode{.mode = gm.Mode.Survival, .hardcore = false}, 0, 0, "default", 8);
-    try play.send_plugin_channel(clnt, "minecraft:brand", "Craft-Server");
-    try play.send_server_difficulty(clnt);
-    try play.send_player_abilities(clnt);
-    try play.send_held_item_change(clnt);
-    try play.send_set_entity_status(clnt, 0, 27);
+    //try play.send_plugin_channel(clnt, "minecraft:brand", "Craft-Server");
+    //try play.send_server_difficulty(clnt);
+    //try play.send_player_abilities(clnt);
+    //try play.send_held_item_change(clnt);
+    //try play.send_set_entity_status(clnt, 0, 27);
 
-    var demoChunk : *Chunk = try std.heap.page_allocator.create(Chunk);
-    demoChunk.chunk_x = 0;
-    demoChunk.chunk_z = 0;
-    std.mem.set(i32, demoChunk.biomeDesc[0..], 1);
-    std.mem.set(i64, demoChunk.heightMap[0..], 0);
+    {
+        var demoChunk : *Chunk = try std.heap.page_allocator.create(Chunk);
+        demoChunk.chunk_x = 0;
+        demoChunk.chunk_z = 0;
+        std.mem.set(i32, demoChunk.biomeDesc[0..], 1);
+        std.mem.set(i64, demoChunk.heightMap[0..], 0);
 
-    var strm = std.io.fixedBufferStream(@ptrCast(*[36 * 8]u8, &demoChunk.heightMap));
-    var writ = strm.writer();
-    var tempLong : u64 = 0;
-    var currentwritindex : u64 = 0;
+        var strm = std.io.fixedBufferStream(@ptrCast(*[36 * 8]u8, &demoChunk.heightMap));
+        var writ = strm.writer();
+        var tempLong : u64 = 0;
+        var currentwritindex : u64 = 0;
 
-    var i: usize = 0;
-    while(i < 256) : (i += 1){
-        var value: u64 = 15;
-        const one: u64 = 1;
-        var bitmask = (one << 9) - 1;
-        value &= bitmask;
-        
+        var i: usize = 0;
+        while(i < 256) : (i += 1){
+            var value: u64 = 15;
+            const one: u64 = 1;
+            var bitmask = (one << 9) - 1;
+            value &= bitmask;
 
-        var bitPosition : usize = i * 9;
-        var firstIndex : usize = bitPosition / 64;
-        var secondIndex : usize = ((i + 1) * 9 - 1) / 64;
-        var bitOffset : usize = bitPosition % 64;
 
-        if(firstIndex != currentwritindex){
-            try writ.writeIntBig(u64, tempLong);
-            tempLong = 0;
-            currentwritindex = firstIndex;
+            var bitPosition : usize = i * 9;
+            var firstIndex : usize = bitPosition / 64;
+            var secondIndex : usize = ((i + 1) * 9 - 1) / 64;
+            var bitOffset : usize = bitPosition % 64;
+
+            if(firstIndex != currentwritindex){
+                try writ.writeIntBig(u64, tempLong);
+                tempLong = 0;
+                currentwritindex = firstIndex;
+            }
+
+            tempLong |= value << @intCast(u6, bitOffset);
+
+
+            if(firstIndex != secondIndex){
+                try writ.writeIntBig(u64, tempLong);
+                currentwritindex = secondIndex;
+                tempLong = (value >> @intCast(u6, (64 - bitOffset)));
+            }
+
         }
+        try writ.writeIntBig(u64, tempLong);
 
-        tempLong |= value << @intCast(u6, bitOffset);
+        @memset(@ptrCast([*]u8, &demoChunk.chunkList), 0, @sizeOf(?*Chunk) * 16);
 
-        
-        if(firstIndex != secondIndex){
-            try writ.writeIntBig(u64, tempLong);
-            currentwritindex = secondIndex;
-            tempLong = (value >> @intCast(u6, (64 - bitOffset)));
+        demoChunk.chunkList[0] = try std.heap.page_allocator.create(ChunkSect);
+        demoChunk.chunkList[0].?.chunk_x = 0;
+        demoChunk.chunkList[0].?.chunk_y = 0;
+        demoChunk.chunkList[0].?.chunk_z = 0;
+        demoChunk.chunkList[0].?.block_count = 4096 - 256;
+        std.mem.set(u16, demoChunk.chunkList[0].?.block_data[0..], 32);
+
+        i = 0;
+        while(i < 256): (i += 1){
+            demoChunk.chunkList[0].?.block_data[4096 - 256] = 0;
         }
-        
-    }
-    try writ.writeIntBig(u64, tempLong);
+    
+        var x : i32 = -3;
+        while(x <= 3) : (x += 1){
+            var z : i32 = -3;
+            while(z <= 3) : (z += 1){
+                demoChunk.chunk_x = x;
+                demoChunk.chunk_z = z;
 
-    @memset(@ptrCast([*]u8, &demoChunk.chunkList), 0, @sizeOf(?*Chunk) * 16);
-
-    demoChunk.chunkList[0] = try std.heap.page_allocator.create(ChunkSect);
-    demoChunk.chunkList[0].?.chunk_x = 0;
-    demoChunk.chunkList[0].?.chunk_y = 0;
-    demoChunk.chunkList[0].?.chunk_z = 0;
-    demoChunk.chunkList[0].?.block_count = 4096 - 256;
-    std.mem.set(u16, demoChunk.chunkList[0].?.block_data[0..], 32);
-
-    i = 0;
-    while(i < 256): (i += 1){
-        demoChunk.chunkList[0].?.block_data[4096 - 256] = 0;
-    }
- 
-    var x : i32 = -3;
-    while(x <= 3) : (x += 1){
-        var z : i32 = -3;
-        while(z <= 3) : (z += 1){
-            demoChunk.chunk_x = x;
-            demoChunk.chunk_z = z;
-            
-            try play.send_chunk(clnt, demoChunk);
-            try play.send_light(clnt, demoChunk);
+                //try play.send_chunk(clnt, demoChunk);
+                //try play.send_light(clnt, demoChunk);
+            }
         }
     }
 
-    try play.send_world_border(clnt, 0, 0, 60000000.0, 60000000.0, 0, 29999984, 5, 15);
-
-    try play.send_player_position_look(clnt, 8, 257, 8, 0, 0, 0, 1337);
-    try play.send_time_update(clnt);
-    try play.send_spawn_position(clnt);
+    //try play.send_world_border(clnt, 0, 0, 60000000.0, 60000000.0, 0, 29999984, 5, 15);
+    //try play.send_player_position_look(clnt, 8, 257, 8, 0, 0, 0, 1337);
+    //try play.send_time_update(clnt);
+    //try play.send_spawn_position(clnt);
 }
 
 

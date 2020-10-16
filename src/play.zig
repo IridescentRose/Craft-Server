@@ -18,18 +18,18 @@ const chat = @import("chat.zig");
 
 //Packet Output Types (remappable for protocols above 578)
 pub const PacketTypeOut = enum(u8) {
-    ServerDifficulty = 0x0E,
-    ChatMessage = 0x0F,
-    PluginMessage = 0x19,
-    EntityStatus = 0x1C,
-    KeepAlive = 0x21,
-    JoinGame = 0x26,
-    PlayerAbilities = 0x32,
-    PlayerPositionLook = 0x36,
-    WorldBorder = 0x3E,
-    HeldItemChange = 0x40,
-    SpawnPosition = 0x4E,
-    TimeUpdate = 0x4F,
+    ServerDifficulty = 0x0D,
+    ChatMessage = 0x0E,
+    PluginMessage = 0x17,
+    EntityStatus = 0x1A,
+    KeepAlive = 0x1F,
+    JoinGame = 0x24,
+    PlayerAbilities = 0x30,
+    PlayerPositionLook = 0x34,
+    WorldBorder = 0x3D,
+    HeldItemChange = 0x3F,
+    SpawnPosition = 0x42,
+    TimeUpdate = 0x4E,
 };
 
 pub const PacketTypeIn = enum(u8) {
@@ -258,8 +258,11 @@ pub fn send_join_game(clnt: *client.Client, eid: i32, gamemode: gm.GameMode, dim
     var strm = std.io.fixedBufferStream(&buff2);
     var writ = strm.writer();
 
+    //TODO: Needs rework
+
     try writ.writeIntBig(i32, eid);
-    try writ.writeIntBig(u8, gamemode.toInt());
+    try writ.writeIntBig(u8, @boolToInt(gamemode.hardcore));
+    try writ.writeIntBig(u8, @enumToInt(gamemode.mode));
     try writ.writeIntBig(i32, dimension);
     try writ.writeIntBig(u64, hashseed);
     try writ.writeByte(0); //Ignored

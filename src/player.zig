@@ -1,7 +1,9 @@
 //Basic Player Class
+pub const UUID = @import("uuid.zig");
+
 pub const Player = struct{
     username: []const u8,
-    uuid: *@import("uuid.zig").UUID,
+    uuid: UUID,
     ability: Abilities,
     pos: Position,
     slot: u8 = 0,

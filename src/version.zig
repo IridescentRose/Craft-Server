@@ -6,6 +6,6 @@ pub const Version = struct{
 
 //Constant server version
 pub const serverVersion = Version{
-    .name = "1.15.2",
-    .protocol = 578  
+    .name = "1.16.3",
+    .protocol = 753  
 };
