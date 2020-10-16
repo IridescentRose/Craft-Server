@@ -178,15 +178,57 @@ pub fn postLoginTrigger(pack: *packet.Packet, clnt: *client.Client) !void {
     demoChunk.chunk_x = 0;
     demoChunk.chunk_z = 0;
     std.mem.set(i32, demoChunk.biomeDesc[0..], 1);
-    std.mem.set(i64, demoChunk.heightMap[0..], 2);
+    std.mem.set(i64, demoChunk.heightMap[0..], 0);
+
+    var strm = std.io.fixedBufferStream(@ptrCast(*[36 * 8]u8, &demoChunk.heightMap));
+    var writ = strm.writer();
+    var tempLong : u64 = 0;
+    var currentwritindex : u64 = 0;
+
+    var i: usize = 0;
+    while(i < 256) : (i += 1){
+        var value: u64 = 15;
+        const one: u64 = 1;
+        var bitmask = (one << 9) - 1;
+        value &= bitmask;
+        
+
+        var bitPosition : usize = i * 9;
+        var firstIndex : usize = bitPosition / 64;
+        var secondIndex : usize = ((i + 1) * 9 - 1) / 64;
+        var bitOffset : usize = bitPosition % 64;
+
+        if(firstIndex != currentwritindex){
+            try writ.writeIntBig(u64, tempLong);
+            tempLong = 0;
+            currentwritindex = firstIndex;
+        }
+
+        tempLong |= value << @intCast(u6, bitOffset);
+
+        
+        if(firstIndex != secondIndex){
+            try writ.writeIntBig(u64, tempLong);
+            currentwritindex = secondIndex;
+            tempLong = (value >> @intCast(u6, (64 - bitOffset)));
+        }
+        
+    }
+    try writ.writeIntBig(u64, tempLong);
+
     @memset(@ptrCast([*]u8, &demoChunk.chunkList), 0, @sizeOf(?*Chunk) * 16);
 
     demoChunk.chunkList[0] = try std.heap.page_allocator.create(ChunkSect);
     demoChunk.chunkList[0].?.chunk_x = 0;
     demoChunk.chunkList[0].?.chunk_y = 0;
     demoChunk.chunkList[0].?.chunk_z = 0;
-    demoChunk.chunkList[0].?.block_count = 4096;
+    demoChunk.chunkList[0].?.block_count = 0;
     std.mem.set(u16, demoChunk.chunkList[0].?.block_data[0..], 1);
+
+    i = 0;
+    while(i < 256): (i += 1){
+        demoChunk.chunkList[0].?.block_data[4096 - 256] = 0;
+    }
  
     try play.send_chunk(clnt, demoChunk);
 }

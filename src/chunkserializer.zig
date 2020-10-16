@@ -75,10 +75,10 @@ pub fn serializeChunkSect(strm: anytype, chunk: *ChunkSect) !void{
         
         if(firstIndex != secondIndex){
             try writ.writeIntBig(u64, tempLong);
-            
             currentwritindex = secondIndex;
             tempLong = (value >> @intCast(u6, (64 - bitOffset)));
         }
+        
     }
     try writ.writeIntBig(u64, tempLong);
 }
@@ -88,8 +88,10 @@ pub fn send_chunk(clnt: *client.Client, chunk: *Chunk) !void {
     const csdataarraysize = 16 * 16 * 16 * bitsperblock / 8 / 8;
     const cssize = 1 + 2 + csdataarraysize * 8;
     const chunkSize = cssize * getChunkSectCount(chunk);
+    
     var buf = try std.heap.page_allocator.alloc(u8, chunkSize + 4096 + 512);
     defer std.heap.page_allocator.free(buf);
+    
     var strm = std.io.fixedBufferStream(buf);
     var writ = strm.writer();
 
@@ -97,7 +99,7 @@ pub fn send_chunk(clnt: *client.Client, chunk: *Chunk) !void {
     try writ.writeIntBig(i32, chunk.chunk_z);
     try writ.writeByte(1); //Full chunk = true
 
-    var bitmask: u16 = 0;//getChunkBitmask(chunk);
+    var bitmask: u16 = getChunkBitmask(chunk);
     try encodeVarInt(writ, bitmask);
 
     //Heightmaps
@@ -111,23 +113,27 @@ pub fn send_chunk(clnt: *client.Client, chunk: *Chunk) !void {
         try writ.writeIntBig(i32, chunk.biomeDesc[i]);
     }
     
-    //Size
-    try encodeVarInt(writ, 0);
 
     //Array
-    //Not working yet
+    var buf2 = try std.heap.page_allocator.alloc(u8, 16384);
+    defer std.heap.page_allocator.free(buf2);
+    var strm2 = std.io.fixedBufferStream(buf2);
     
-    //var buf2 = try std.heap.page_allocator.alloc(u8, 8192);
-    //defer std.heap.page_allocator.free(buf2);
-    //var strm2 = std.io.fixedBufferStream(buf2);
-    //
-    //i = 0;
-    //while(i < 16) : (i += 1){
-    //    if(chunk.chunkList[i] != null){
-    //        try serializeChunkSect(&strm2, chunk.chunkList[i].?);
-    //    }
-    //}
-    //try writ.writeAll(strm2.getWritten());
+    i = 0;
+    while(i < 16) : (i += 1){
+        if(chunk.chunkList[i] != null){
+            try serializeChunkSect(&strm2, chunk.chunkList[i].?);
+        }
+    }
+
+    
+    //Size
+    try encodeVarInt(writ, try strm2.getPos());
+    
+    i = 0;
+    while(i < try strm2.getPos()) : (i += 1){
+        try writ.writeByte(strm2.getWritten()[i]);
+    }
 
     //Block Entities are not instantiated here
     try writ.writeByte(0);

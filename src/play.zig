@@ -103,6 +103,22 @@ pub fn handlePacket(pack: *packet.Packet, clnt: *client.Client) !void {
             try handle_tp_confirm(rd, clnt);
         },
 
+        .PlayerPosition => {
+            try handle_player_position(rd, clnt);
+        },
+
+        .PlayerPositionAndRotation => {
+            try handle_player_position_rotation(rd, clnt);
+        },
+        
+        .PlayerRotation => {
+            try handle_player_rotation(rd, clnt);
+        },
+        
+        .PlayerMovement => {
+            try handle_player_movement(rd, clnt);
+        },
+
         else => {
             try handle_dummy(pack, clnt);
         },
@@ -117,9 +133,76 @@ pub fn handle_keep_alive(rd: anytype, clnt: *client.Client) !void {
     }
 }
 
+//TODO: FINISH THIS
 pub fn handle_tp_confirm(rd: anytype, clnt: *client.Client) !void {
     var int = try decodeVarInt(rd);
     log.debug("TODO: Implement TP confirm system. ID {}", .{int});
+}
+
+//Player Position
+pub fn handle_player_position(rd: anytype, clnt: *client.Client) !void{
+    @setRuntimeSafety(false);
+    var ix = try rd.readIntBig(i64);
+    var iy = try rd.readIntBig(i64);
+    var iz = try rd.readIntBig(i64);
+    var b = try rd.readByte();
+
+    var x = @bitCast(f64, ix);
+    var y = @bitCast(f64, iy);
+    var z = @bitCast(f64, iz);
+    var onGround = b == 1;
+
+    clnt.player.pos.x = x;
+    clnt.player.pos.y = y;
+    clnt.player.pos.z = z;
+    clnt.player.pos.onGround = onGround;
+}
+//Player Position
+pub fn handle_player_position_rotation(rd: anytype, clnt: *client.Client) !void{
+    @setRuntimeSafety(false);
+    var ix = try rd.readIntBig(i64);
+    var iy = try rd.readIntBig(i64);
+    var iz = try rd.readIntBig(i64);
+    var iyaw = try rd.readIntBig(i32);
+    var ipit = try rd.readIntBig(i32);
+    var b = try rd.readByte();
+
+    var x = @bitCast(f64, ix);
+    var y = @bitCast(f64, iy);
+    var z = @bitCast(f64, iz);
+    var yaw = @bitCast(f32, iyaw);
+    var pitch = @bitCast(f32, ipit);
+    var onGround = b == 1;
+
+    clnt.player.pos.x = x;
+    clnt.player.pos.y = y;
+    clnt.player.pos.z = z;
+    clnt.player.pos.yaw = yaw;
+    clnt.player.pos.pitch = pitch;
+    clnt.player.pos.onGround = onGround;
+}
+//Player Position
+pub fn handle_player_rotation(rd: anytype, clnt: *client.Client) !void{
+    @setRuntimeSafety(false);
+    var iyaw = try rd.readIntBig(i32);
+    var ipit = try rd.readIntBig(i32);
+    var b = try rd.readByte();
+
+    var yaw = @bitCast(f32, iyaw);
+    var pitch = @bitCast(f32, ipit);
+    var onGround = b == 1;
+
+    clnt.player.pos.yaw = yaw;
+    clnt.player.pos.pitch = pitch;
+    clnt.player.pos.onGround = onGround;
+}
+
+//Player Position
+pub fn handle_player_movement(rd: anytype, clnt: *client.Client) !void{
+    @setRuntimeSafety(false);
+    var b = try rd.readByte();
+    var onGround = b == 1;
+    clnt.player.pos.onGround = onGround;
 }
 
 //Output the chat Json
