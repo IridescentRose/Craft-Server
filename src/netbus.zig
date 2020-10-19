@@ -172,6 +172,7 @@ pub fn postLoginTrigger(pack: *packet.Packet, clnt: *client.Client) !void {
     try play.send_set_entity_status(clnt, 0, 27);
 
     var demoChunk : *Chunk = try std.heap.page_allocator.create(Chunk);
+    defer std.heap.page_allocator.destroy(demoChunk);
     demoChunk.chunk_x = 0;
     demoChunk.chunk_z = 0;
     std.mem.set(i32, demoChunk.biomeDesc[0..], 1);

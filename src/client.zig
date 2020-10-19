@@ -41,6 +41,9 @@ pub const ConnectionStatus = enum(c_int) {
 };
 
 const pl = @import("player.zig");
+usingnamespace @import("events.zig");
+const bus = @import("bus.zig");
+const play = @import("play.zig");
 
 //Our main client object - which handles each packet.
 pub const Client = struct {
@@ -53,6 +56,17 @@ pub const Client = struct {
     loggedIn: bool = false,
     player: pl.Player = undefined,
     keepAliveTimer: time.Timer = undefined,
+
+    pub fn handleEvent(self: *Client, event: *Event) !void {
+        if(self.status == ConnectionStatus.Play){
+            switch(event.etype) {
+                .TimeUpdate => {
+                    var etime = @intToPtr(*EventTimeUpdate, @ptrToInt(event));
+                    try play.send_time_update_e(self, etime.worldAge, etime.timeOfDay);
+                }
+            }
+        }
+    }
 
     //Read a packet from the reader into an existing buffer.
     pub fn readPacket(reader: anytype, pack: *packet.Packet, compress: bool) !bool {
@@ -113,6 +127,7 @@ pub const Client = struct {
             server.info.players.online -= 1;
         }
         self.conn.close();
+        bus.removeListener(self);
     }
 
     //Handle our connection object.
@@ -129,6 +144,7 @@ pub const Client = struct {
 
         self.player.ability = pl.Abilities{};
         self.player.slot = 0;
+        try bus.addListener(self);
 
         //Main loop
         while (!self.shouldClose) {

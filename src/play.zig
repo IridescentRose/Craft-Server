@@ -387,6 +387,18 @@ pub fn send_time_update(clnt: *client.Client) !void {
     try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), @enumToInt(PacketTypeOut.TimeUpdate), clnt.compress);
 }
 
+//Sends world time with given data.
+pub fn send_time_update_e(clnt: *client.Client, worldAge: u64, timeOfDay: u64) !void {
+    var buf: [16]u8 = undefined;
+    var strm = std.io.fixedBufferStream(&buf);
+    var writ = strm.writer();
+
+    try writ.writeIntBig(u64, worldAge);
+    try writ.writeIntBig(u64, timeOfDay);
+
+    try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), @enumToInt(PacketTypeOut.TimeUpdate), clnt.compress);
+}
+
 //Sends default spawn position of 0, 63, 0
 pub fn send_spawn_position(clnt: *client.Client) !void {
     var buf: [16]u8 = undefined;

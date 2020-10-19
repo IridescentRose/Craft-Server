@@ -1,0 +1,64 @@
+const std = @import("std");
+const client = @import("client.zig");
+usingnamespace @import("events.zig");
+
+var eventList = std.ArrayList(*Event).init(std.heap.page_allocator);
+var eventsMutex = std.Mutex{};
+
+var listenerList = std.ArrayList(*client.Client).init(std.heap.page_allocator);
+var listenerMutex = std.Mutex{};
+
+pub fn init() !void {
+    eventList.shrink(0);
+    listenerList.shrink(0);
+}
+
+pub fn addEvent(event: *Event) !void {
+    const held = eventsMutex.acquire();
+    defer held.release();
+
+    try eventList.append(event);    
+}
+
+pub fn addListener(listener: *client.Client) !void {
+    const held = listenerMutex.acquire();
+    defer held.release();
+
+    try listenerList.append(listener);
+}
+
+pub fn removeListener(listener: *client.Client) void {
+    const held = eventsMutex.acquire();
+    defer held.release();
+
+    const held2 = listenerMutex.acquire();
+    defer held2.release();
+
+    var i: usize = 0;
+    while(i < listenerList.items.len) : (i += 1){
+        if(listenerList.items[i] == listener) {
+            _ = listenerList.swapRemove(i);
+            return;
+        }
+    }
+}
+
+pub fn pushEvents() !void {
+
+    const held = listenerMutex.acquire();
+    defer held.release();
+
+    var i: usize = 0;
+    while(i < eventList.items.len) : (i += 1){
+        var c : usize = 0;
+        while(c < listenerList.items.len) : (c += 1){
+            try listenerList.items[i].handleEvent(eventList.items[i]);
+        }
+    }
+
+    i = 0;
+    while(i < eventList.items.len) : (i += 1){
+        std.heap.page_allocator.destroy(eventList.items[i]);
+    }
+    eventList.shrink(0);
+}
