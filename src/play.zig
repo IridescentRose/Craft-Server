@@ -372,15 +372,17 @@ pub fn send_player_position_look(clnt: *client.Client, x: f64, y: f64, z: f64, y
     try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), @enumToInt(PacketTypeOut.PlayerPositionLook), clnt.compress);
 }
 
-const time = @import("time.zig");
+const world = @import("world.zig");
 //Sends current world time
 pub fn send_time_update(clnt: *client.Client) !void {
     var buf: [16]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buf);
     var writ = strm.writer();
 
-    try writ.writeIntBig(i64, time.worldTime.worldAge);
-    try writ.writeIntBig(i64, time.worldTime.timeOfDay);
+    const held = world.timeCtx.mutex.acquire();
+    try writ.writeIntBig(u64, world.timeCtx.time.worldAge);
+    try writ.writeIntBig(u64, world.timeCtx.time.timeOfDay);
+    held.release();
 
     try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), @enumToInt(PacketTypeOut.TimeUpdate), clnt.compress);
 }

@@ -37,12 +37,20 @@ pub const io_mode = .evented;
 //Create our server socket
 pub var sock : network.Socket = undefined;
 
+
+const world = @import("world.zig");
+var thread: ?*std.Thread = null;
+
 //Open the network up
 //Bind the socket
 //Listen for connections
 pub fn init() !void {
     shouldRun = true;
     
+    //World load before thread spawn
+    try world.init();
+    thread = try std.Thread.spawn({}, world.tickUpdate);
+
     try network.init();
     sock = try network.Socket.create(.ipv4, .tcp);
     
@@ -65,8 +73,8 @@ pub fn update() !void {
     //TODO: Replace with real allocator
     //Allocate a client
     const cl = try std.heap.page_allocator.create(client.Client);
+    defer std.heap.page_allocator.destroy(cl);
     //Destroy the client when done
-    //defer std.heap.page_allocator.destroy(cl);
 
     //Create a client object
     cl.* = client.Client{
