@@ -125,6 +125,10 @@ pub fn handlePacket(pack: *packet.Packet, clnt: *client.Client) !void {
             try handle_player_movement(rd, clnt);
         },
 
+        .Animation =>{
+            try handle_player_animation(rd, clnt);
+        },
+
         else => {
             try handle_dummy(pack, clnt);
         },
@@ -137,6 +141,11 @@ pub fn handle_keep_alive(rd: anytype, clnt: *client.Client) !void {
     if (id != 133742069) {
         log.err("BAD KEEPALIVE {}", .{id});
     }
+}
+
+//TODO: FINISH THIS
+pub fn handle_player_animation(rd: anytype, clnt: *client.Client) !void {
+    log.trace("TODO: HANDLE ANIMATION", .{});
 }
 
 //TODO: FINISH THIS
@@ -211,6 +220,9 @@ pub fn handle_player_movement(rd: anytype, clnt: *client.Client) !void{
     clnt.player.pos.onGround = onGround;
 }
 
+usingnamespace @import("events.zig");
+const bus = @import("bus.zig");
+
 //Output the chat Json
 pub fn handle_chat_packet(rd: anytype, clnt: *client.Client) !void {
     var str = try decodeUTF8Str(rd);
@@ -226,9 +238,14 @@ pub fn handle_chat_packet(rd: anytype, clnt: *client.Client) !void {
             str,
         });
         log.info("{}", .{text});
-        var c = chat.Text{ .text = text, .color = "white" };
-        try send_chat_packet(clnt, c);
-        std.heap.page_allocator.free(text);
+        var c = try std.heap.page_allocator.create(chat.Text);
+        c.* = chat.Text{ .text = text, .color = "white" };
+
+        var event = try std.heap.page_allocator.create(Event);
+        event.etype = EventTypes.Chat;
+        event.data = @ptrCast(*EventData, c);
+
+        try bus.addEvent(event);
     }
 }
 

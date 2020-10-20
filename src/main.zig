@@ -37,7 +37,7 @@ const server = @import("server.zig");
 pub fn main() !void {
     //Setup the logger
     log.init();
-    log.setLevel(log.Level.Trace);
+    log.setLevel(log.Level.Debug);
     log.info("Craft-Server v0.3", .{});
     //Initialize the Server
     try server.init();

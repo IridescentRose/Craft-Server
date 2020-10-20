@@ -43,6 +43,8 @@ pub fn removeListener(listener: *client.Client) void {
     }
 }
 
+const chat = @import("chat.zig");
+
 pub fn pushEvents() !void {
 
     const held = listenerMutex.acquire();
@@ -61,6 +63,12 @@ pub fn pushEvents() !void {
 
     i = 0;
     while(i < eventList.items.len) : (i += 1){
+        if(eventList.items[i].etype == EventTypes.Chat){
+            var data = @ptrCast(*chat.Text, @alignCast(@alignOf(chat.Text), eventList.items[i].data));
+            std.heap.page_allocator.free(data.text);
+            std.heap.page_allocator.destroy(data);
+        }
+
         std.heap.page_allocator.destroy(eventList.items[i]);
     }
     eventList.shrink(0);

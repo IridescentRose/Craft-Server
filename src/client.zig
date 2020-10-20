@@ -45,6 +45,7 @@ usingnamespace @import("events.zig");
 const bus = @import("bus.zig");
 const tm = @import("time.zig");
 const play = @import("play.zig");
+const chat = @import("chat.zig");
 
 //Our main client object - which handles each packet.
 pub const Client = struct {
@@ -67,6 +68,11 @@ pub const Client = struct {
                 },
                 .KeepAlive => {
                     try play.send_keep_alive(self, 133742069);
+                },
+                
+                .Chat => {
+                    var data = @ptrCast(*chat.Text, @alignCast(@alignOf(chat.Text), event.data));
+                    try play.send_chat_packet(self, data.*);
                 }
             }
         }
