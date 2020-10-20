@@ -4,6 +4,7 @@ const tm = @import("time.zig");
 const bus = @import("bus.zig");
 usingnamespace @import("events.zig");
 usingnamespace @import("difficulty.zig");
+usingnamespace @import("gamerules.zig");
 
 const ticksPerDay: u32 = 24000;
 
@@ -31,6 +32,55 @@ pub var difficultyCtx : DifficultyContext = DifficultyContext{
         .locked = false,
     },
     .mutex = &difMut
+};
+
+
+//Current rules
+var rulMut = std.Mutex{};
+const GameRulesContext = struct{
+    rules: GameRules,
+    mutex: *std.Mutex
+};
+
+pub var rules = GameRulesContext{
+    .rules = GameRules{
+        .announceAdvancements = true,
+        .commandBlockOutput = true, 
+        .disableElytraMovementCheck = false,
+        .disableRaids = false,
+        .doDaylightCycle = true,
+        .doEntityDrops = true,
+        .doFireTick = true,
+        .doInsomnia = true,
+        .doImmediateRespawn = false,
+        .doLimitedCrafting = false,
+        .doMobLoot = true,
+        .doMobSpawning = true,
+        .doPatrolSpawning = true,
+        .doTileDrops = true,
+        .doTraderSpawning = true,
+        .doWeatherCycle = true,
+        .drowningDamage = true,
+        .fallDamage = true,
+        .fireDamage = true,
+        .forgiveDeadPlayers = true,
+        .keepInventory = false,
+        .logAdminCommands = true,
+        .maxCommandChainLength = 65535,
+        .maxEntityCramming = 24,
+        .mobGriefing = true,
+        .naturalRegeneration = true,
+        .randomTickSpeed = 3,
+        .reducedDebugInfo = false,
+        .sendCommandFeedback = true,
+        .showCoordinates = true,
+        .showDeathMessages = true,
+        .spawnRadius = 10,
+        .spectatorsGenerateChunks = true,
+        .tntExplodes = true,
+        .universalAnger = false
+    },
+    .mutex = &rulMut
 };
 
 

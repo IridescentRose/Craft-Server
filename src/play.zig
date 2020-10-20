@@ -286,8 +286,12 @@ pub fn send_join_game(clnt: *client.Client, eid: i32, gamemode: gm.GameMode, dim
     try writ.writeByte(0); //Ignored
     try encodeUTF8Str(writ, lvlType);
     try writ.writeIntBig(u8, viewDist);
-    try writ.writeByte(@boolToInt(game.rules.reducedDebugInfo));
-    try writ.writeByte(@boolToInt(game.rules.doImmediateRespawn));
+
+    var held = world.rules.mutex.acquire();
+    defer held.release();
+
+    try writ.writeByte(@boolToInt(world.rules.rules.reducedDebugInfo));
+    try writ.writeByte(@boolToInt(world.rules.rules.doImmediateRespawn));
 
     try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), @enumToInt(PacketTypeOut.JoinGame), clnt.compress);
 }
