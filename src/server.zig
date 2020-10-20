@@ -73,18 +73,17 @@ pub fn update() !void {
     //TODO: Replace with real allocator
     //Allocate a client
     const cl = try std.heap.page_allocator.create(client.Client);
-    defer std.heap.page_allocator.destroy(cl);
-    //Destroy the client when done
 
     //Create a client object
     cl.* = client.Client{
         .conn = try sock.accept(),
-        .handle_frame = await async client.Client.handle(cl),
         .status = client.ConnectionStatus.Handshake,
         .protocolVer = 0,
         .compress = false,
         .shouldClose = false,
     };
+
+    var thr = try std.Thread.spawn(cl, client.Client.handle);
 
 }
 

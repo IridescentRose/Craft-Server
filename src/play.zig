@@ -88,6 +88,10 @@ pub fn handlePacket(pack: *packet.Packet, clnt: *client.Client) !void {
     var rd = pack.toStream().reader();
     try rd.skipBytes(1, .{});
 
+    if(pack.id > 0x2D){
+        return error.Unexpected;
+    }
+
     switch (@intToEnum(PacketTypeIn, pack.id)) {
         .KeepAlive => {
             try handle_keep_alive(rd, clnt);
@@ -130,7 +134,7 @@ pub fn handlePacket(pack: *packet.Packet, clnt: *client.Client) !void {
 //Handles keep alive - does an error print if it's the wrong ID
 pub fn handle_keep_alive(rd: anytype, clnt: *client.Client) !void {
     var id = try rd.readIntBig(u64);
-    if (id != 1337) {
+    if (id != 133742069) {
         log.err("BAD KEEPALIVE {}", .{id});
     }
 }

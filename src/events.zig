@@ -1,13 +1,11 @@
 pub const EventTypes = enum(u16) {
-    TimeUpdate = 0,
+    TimeUpdate,
+    KeepAlive,
 };
+
+pub const EventData = opaque {};
 
 pub const Event = struct {
-    etype: EventTypes
-};
-
-pub const EventTimeUpdate = struct {
-    usingnamespace Event;
-    timeOfDay: u64,
-    worldAge: u64
+    etype: EventTypes,
+    data: ?*EventData
 };

@@ -48,11 +48,14 @@ pub fn pushEvents() !void {
     const held = listenerMutex.acquire();
     defer held.release();
 
+    const held2 = eventsMutex.acquire();
+    defer held2.release();
+
     var i: usize = 0;
     while(i < eventList.items.len) : (i += 1){
-        var c : usize = 0;
-        while(c < listenerList.items.len) : (c += 1){
-            try listenerList.items[i].handleEvent(eventList.items[i]);
+        var j : usize = 0;
+        while(j < listenerList.items.len) : (j += 1){
+            try listenerList.items[j].handleEvent(eventList.items[i]);
         }
     }
 

@@ -43,34 +43,42 @@ pub const ConnectionStatus = enum(c_int) {
 const pl = @import("player.zig");
 usingnamespace @import("events.zig");
 const bus = @import("bus.zig");
+const tm = @import("time.zig");
 const play = @import("play.zig");
 
 //Our main client object - which handles each packet.
 pub const Client = struct {
     conn: network.Socket,
-    handle_frame: @Frame(Client.handle),
     status: ConnectionStatus,
     compress: bool,
     protocolVer: u32,
     shouldClose: bool,
     loggedIn: bool = false,
     player: pl.Player = undefined,
-    keepAliveTimer: time.Timer = undefined,
+    readLock: std.Mutex = std.Mutex{},
+    writeLock: std.Mutex = std.Mutex{},
 
     pub fn handleEvent(self: *Client, event: *Event) !void {
         if(self.status == ConnectionStatus.Play){
             switch(event.etype) {
                 .TimeUpdate => {
-                    var etime = @intToPtr(*EventTimeUpdate, @ptrToInt(event));
-                    try play.send_time_update_e(self, etime.worldAge, etime.timeOfDay);
+                    var data = @ptrCast(*tm.Time, @alignCast(@alignOf(tm.Time), event.data));
+                    try play.send_time_update_e(self, data.worldAge, data.timeOfDay);
+                },
+                .KeepAlive => {
+                    try play.send_keep_alive(self, 133742069);
                 }
             }
         }
     }
 
     //Read a packet from the reader into an existing buffer.
-    pub fn readPacket(reader: anytype, pack: *packet.Packet, compress: bool) !bool {
-        var size: u32 = try decodeVarInt(reader);
+    pub fn readPacket(self: *Client, pack: *packet.Packet) !bool {
+        var held = self.readLock.acquire();
+        defer held.release();
+
+        var rd = self.conn.reader();
+        var size: u32 = try decodeVarInt(rd);
 
         //Check the size
         if (size == 0) {
@@ -82,11 +90,11 @@ pub const Client = struct {
         //Read into buffer
         var i: usize = 0;
         while (i < size) : (i += 1) {
-            pack.buffer[i] = try reader.readByte();
+            pack.buffer[i] = try rd.readByte();
         }
         pack.size = size;
 
-        if (compress) {
+        if (self.compress) {
             log.fatal("COMPRESSION DISABLED!", .{});
         } else {
             pack.id = try pack.toStream().reader().readByte();
@@ -97,6 +105,8 @@ pub const Client = struct {
 
     //Send a packet from the buffer to the socket.
     pub fn sendPacket(self: *Client, writer: anytype, buf: []u8, id: u8, compress: bool) !void {
+        var held = self.writeLock.acquire();
+        defer held.release();
 
         //Allocate our full packet buffer and free it after
         var buffer = try std.heap.page_allocator.alloc(u8, buf.len + 1 + 1 + 5);
@@ -136,27 +146,14 @@ pub const Client = struct {
         self.shouldClose = false;
         self.status = ConnectionStatus.Handshake;
 
-        self.keepAliveTimer = try time.Timer.start();
-
-        log.info("Client connected from {}", .{
-            try self.conn.getLocalEndPoint(),
-        });
+        log.info("Client connected from {}", .{try self.conn.getLocalEndPoint(),});
 
         self.player.ability = pl.Abilities{};
         self.player.slot = 0;
-        try bus.addListener(self);
 
         //Main loop
         while (!self.shouldClose) {
-            //Check for keepalive time
-            if (self.keepAliveTimer.read() / time.ns_per_s >= 1 and self.status == ConnectionStatus.Play) {
-                self.keepAliveTimer.reset();
-                try playState.send_keep_alive(self, 1337);
-            }
-
             //Create a new packet instance
-            const reader = self.conn.reader();
-
             const pck = try std.heap.page_allocator.create(packet.Packet);
             defer std.heap.page_allocator.destroy(pck);
             pck.* = packet.Packet{
@@ -165,13 +162,19 @@ pub const Client = struct {
             };
 
             //Read packet
-            _ = try await async readPacket(reader, pck, self.compress);
+            _ = self.readPacket(pck) catch{
+                _ = self.disconnect() catch unreachable;
+                return;
+            };
 
             //Handle packet (and send)
-            try netbus.handlePacket(pck, self);
+            netbus.handlePacket(pck, self)catch{
+                _ = self.disconnect() catch unreachable;
+                return;
+            };
         }
 
         //We were closed - so close out!
-        _ = self.disconnect() catch {};
+        _ = try self.disconnect();
     }
 };

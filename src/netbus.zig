@@ -161,9 +161,12 @@ const play = @import("play.zig");
 const gm = @import("gamemode.zig");
 const Chunk = @import("chunk.zig");
 const ChunkSect = @import("chunksect.zig");
+const bus = @import("bus.zig");
 //On login, let's set up the server! 
 //TODO: Remove all "magic" numbers
 pub fn postLoginTrigger(pack: *packet.Packet, clnt: *client.Client) !void {
+    try bus.addListener(clnt);
+
     try play.send_join_game(clnt, 0, gm.GameMode{.mode = gm.Mode.Survival, .hardcore = false}, 0, 0, "default", 8);
     try play.send_plugin_channel(clnt, "minecraft:brand", "Craft-Server");
     try play.send_server_difficulty(clnt);
