@@ -304,15 +304,17 @@ pub fn send_plugin_channel(clnt: *client.Client, channel: []const u8, data: []co
     try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), @enumToInt(PacketTypeOut.PluginMessage), clnt.compress);
 }
 
-const diff = @import("difficulty.zig");
 //Sends the current server difficulty
 pub fn send_server_difficulty(clnt: *client.Client) !void {
     var buf: [16]u8 = undefined;
     var strm = std.io.fixedBufferStream(&buf);
     var writ = strm.writer();
 
-    try writ.writeByte(@enumToInt(diff.setting.difficulty));
-    try writ.writeByte(@boolToInt(diff.setting.locked));
+    var held = world.difficultyCtx.mutex.acquire();
+    defer held.release();
+
+    try writ.writeByte(@enumToInt(world.difficultyCtx.difficulty.difficulty));
+    try writ.writeByte(@boolToInt(world.difficultyCtx.difficulty.locked));
     try clnt.sendPacket(clnt.conn.writer(), strm.getWritten(), @enumToInt(PacketTypeOut.ServerDifficulty), clnt.compress);
 }
 

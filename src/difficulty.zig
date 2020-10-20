@@ -11,9 +11,3 @@ pub const DifficultySetting = struct{
     difficulty: Difficulty,
     locked: bool,
 };
-
-//Settings for the packet - TODO: Load at startup
-pub var setting : DifficultySetting = DifficultySetting{
-    .difficulty = Difficulty.Easy,
-    .locked = false,
-};

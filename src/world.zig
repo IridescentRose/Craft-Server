@@ -3,6 +3,7 @@ const std = @import("std");
 const tm = @import("time.zig");
 const bus = @import("bus.zig");
 usingnamespace @import("events.zig");
+usingnamespace @import("difficulty.zig");
 
 const ticksPerDay: u32 = 24000;
 
@@ -16,6 +17,22 @@ pub var timeCtx : TimeContext = TimeContext{
     .mutex = &timeMut,
     .time = tm.Time{}
 };
+
+//Settings for the packet
+const DifficultyContext = struct{
+    difficulty: DifficultySetting,
+    mutex: *std.Mutex
+};
+
+var difMut = std.Mutex{};
+pub var difficultyCtx : DifficultyContext = DifficultyContext{
+    .difficulty = DifficultySetting{
+        .difficulty = Difficulty.Easy,
+        .locked = false,
+    },
+    .mutex = &difMut
+};
+
 
 pub fn init() !void {
     try bus.init();
