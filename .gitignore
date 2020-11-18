@@ -358,3 +358,7 @@ Debug
 *.SFO
 *.prx
 *.elf
+
+world
+playerdata
+zig-cache
